@@ -1,0 +1,62 @@
+# Project workflow configuration.
+# This file belongs to the PROJECT layer: updating the kit never overwrites it.
+# Reference: docs/configuration.md of the kit.
+
+[project]
+name = {{name_toml}}
+# Files the agents must read before working (project rules, conventions).
+rules = [".agents/rules/project.md"]
+# Optional: the project's threat model, read by the security reviewer.
+security_model = ".agents/security-model.md"
+language_policy = {{language_policy_toml}}
+
+[tickets]
+dir = "{{tickets_dir}}"
+backlog = "{{tickets_dir}}/README.md"
+id_pattern = '{{id_pattern}}'
+file_glob = "{{id_prefix}}*.md"
+# The status line of a ticket header. Its symbol must match the backlog row.
+header_status = '^>\s*\*\*Status:\*\*\s*(.*)$'
+# A ticket marked done must contain this section (empty string disables it).
+done_requires_section = "Acceptance Criteria"
+
+[tickets.statuses]
+done = "✅"
+in_progress = "🔄"
+pending = "⏳"
+deferred = "⏸️"
+proposed = "📝"
+
+[commits]
+pattern = '{{commit_pattern}}'
+format_hint = "<type>(<area>): <TID> - <title>"
+
+[size]
+warn_lines = 800
+error_lines = 1500
+# Files already over the limit when the project adopted the kit (acknowledged debt).
+baseline = ".agents/baseline.txt"
+# include / exclude default to the stack preset; set them here to override.
+# include = ["src/**/*.py"]
+
+[gates]
+# rust | node | python | none
+preset = "{{stack}}"
+# Override a preset gate, or switch it off (it is then reported on every run):
+# [gates.override.test]
+# command = "make test"
+# [gates.override.lint]
+# enabled = false
+# Add gates of your own:
+# [[gates.extra]]
+# name = "docs"
+# command = "make docs"
+
+[sensitive]
+# Paths whose change requires a security review (globs relative to the repo root).
+globs = []
+
+[checks]
+backlog = true
+honest_closing = true
+sizes = true

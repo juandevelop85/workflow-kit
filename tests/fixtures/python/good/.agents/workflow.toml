@@ -1,0 +1,18 @@
+[project]
+name = "fixture-python"
+rules = [".agents/rules/project.md"]
+
+[tickets]
+dir = "docs/tickets"
+backlog = "docs/tickets/README.md"
+
+[size]
+warn_lines = 5
+error_lines = 8
+baseline = ".agents/baseline.txt"
+
+[gates]
+preset = "python"
+
+[sensitive]
+globs = ["**/auth/**"]

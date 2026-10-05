@@ -1,0 +1,19 @@
+# Stack preset: Node.js (npm scripts). Override a command in workflow.toml if the project
+# uses another package manager or other script names.
+name = "node"
+
+[[gate]]
+name = "lint"
+command = "npm run lint --if-present"
+
+[[gate]]
+name = "typecheck"
+command = "npm run typecheck --if-present"
+
+[[gate]]
+name = "test"
+command = "npm test"
+
+[size]
+include = ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.mjs", "**/*.cjs"]
+exclude = ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.next/**", "**/coverage/**"]

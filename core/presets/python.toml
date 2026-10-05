@@ -1,0 +1,19 @@
+# Stack preset: Python. Override a command in workflow.toml for other tools
+# (e.g. flake8 instead of ruff, unittest instead of pytest).
+name = "python"
+
+[[gate]]
+name = "lint"
+command = "python3 -m ruff check ."
+
+[[gate]]
+name = "format"
+command = "python3 -m ruff format --check ."
+
+[[gate]]
+name = "test"
+command = "python3 -m pytest"
+
+[size]
+include = ["**/*.py"]
+exclude = ["**/.venv/**", "**/venv/**", "**/__pycache__/**", "**/build/**", "**/dist/**", "**/.tox/**"]

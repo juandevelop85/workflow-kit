@@ -1,0 +1,18 @@
+# Stack preset: Rust. A preset is only a list of gates and the files whose size is watched.
+name = "rust"
+
+[[gate]]
+name = "format"
+command = "cargo fmt --all -- --check"
+
+[[gate]]
+name = "lint"
+command = "cargo clippy --workspace --all-targets -- -D warnings"
+
+[[gate]]
+name = "test"
+command = "cargo test --workspace"
+
+[size]
+include = ["**/*.rs"]
+exclude = ["**/target/**"]

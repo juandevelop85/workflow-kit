@@ -1,0 +1,28 @@
+# {{name}} · Project rules
+
+These rules are read by every agent before it works. Write down decisions, not wishes: a rule
+that is not checked by a test, a linter or a review is a hope.
+
+## Architecture and conventions
+
+Describe the layout of the repository and the conventions of the code. *(Fill this in.)*
+
+## Language policy
+
+{{language_policy}}
+
+## Ticket flow
+
+- Every change corresponds to a ticket in `{{tickets_dir}}/`.
+- Do not change a ticket's functional goals without updating the ticket.
+- Closing a ticket: verify every acceptance criterion, mark it done in the backlog, then commit
+  with the format `<type>(<area>): <TID> - <title>`.
+- A ticket is not closed while any quality gate is red, even one the ticket did not touch.
+
+## Quality gates
+
+The gates are declared in `.agents/workflow.toml`. Run them with `/quality-gate`.
+
+## Rules learned
+
+Each repeated mistake becomes a rule here, with the ticket or commit that taught it.

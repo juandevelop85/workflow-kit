@@ -1,0 +1,22 @@
+# {{name}} · Threat model
+
+Read by the security reviewer before it looks at a diff. *(Fill this in: the reviewer cannot
+guess what you are protecting.)*
+
+## What we protect
+
+List the assets: credentials, user data, the integrity of the build, availability…
+
+## Who attacks and what they control
+
+List the attackers and the inputs they control: a malicious user, a hostile dependency, a
+compromised service, a crafted file or message.
+
+## Trust boundaries
+
+Where untrusted data enters (network, files, environment, CLI arguments) and what must be
+validated at each boundary.
+
+## Surfaces that always need a security review
+
+Mirror the globs of `[sensitive]` in `.agents/workflow.toml` and explain why each one matters.

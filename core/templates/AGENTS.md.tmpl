@@ -1,0 +1,17 @@
+# {{name}} · Guide for coding agents
+
+This repository uses a ticket-driven workflow with AI agents.
+
+- **Tickets:** `{{tickets_dir}}/`. The backlog is `{{tickets_dir}}/README.md`.
+- **Rules:** `.agents/rules/project.md`. Read it before working.
+- **Configuration:** `.agents/workflow.toml` (gates, ticket format, size limits, sensitive surfaces).
+
+## Commands
+
+- `/ticket-new <idea>`: write a ticket.
+- `/ticket-run <ID>`: run a ticket end to end.
+- `/ticket-review [ID]`: independent review of a ticket or diff.
+- `/quality-gate`: run the quality gates and report.
+- `/ticket-status [phase]`: state of the backlog.
+
+The single source of these skills, agents and commands is `.agents/`; `.claude/` links to it.
