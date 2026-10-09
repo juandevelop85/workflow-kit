@@ -39,5 +39,34 @@ python3 .agents/scripts/workflow_check.py sensitive [--base REF] [paths…]
 ## Presets
 
 A preset (`.agents/presets/<name>.toml`) is only a list of `[[gate]]` entries (`name`, `command`)
-and the `[size]` globs to measure. Add your own by dropping a file there; it is core, so a later
+and the `[size]` globs to measure. It is selected with `[gates].preset`, which `install.py install
+--stack <name>` writes for you. Add your own by dropping a file there; it is core, so a later
 update may replace it: keep project-specific changes in `workflow.toml`.
+
+| Preset | Gates (in order) | `[size].include` | `[size].exclude` |
+| :--- | :--- | :--- | :--- |
+| `rust` | `format`: `cargo fmt --all -- --check`<br>`lint`: `cargo clippy --workspace --all-targets -- -D warnings`<br>`test`: `cargo test --workspace` | `**/*.rs` | `**/target/**` |
+| `node` | `lint`: `npm run lint --if-present`<br>`typecheck`: `npm run typecheck --if-present`<br>`test`: `npm test` | `**/*.js`, `**/*.jsx`, `**/*.ts`, `**/*.tsx`, `**/*.mjs`, `**/*.cjs` | `node_modules`, `dist`, `build`, `.next`, `coverage` |
+| `python` | `lint`: `python3 -m ruff check .`<br>`format`: `python3 -m ruff format --check .`<br>`test`: `python3 -m pytest` | `**/*.py` | `.venv`, `venv`, `__pycache__`, `build`, `dist`, `.tox` |
+| `none` | none | from `workflow.toml` | |
+
+`python3 .agents/scripts/workflow_check.py gates` prints the gates actually resolved for the project.
+
+### Using other tools
+
+Override one gate, switch it off, or add another, without touching the preset:
+
+```toml
+[gates]
+preset = "python"
+
+[gates.override.lint]
+command = "python3 -m flake8"
+
+[gates.override.format]
+enabled = false
+
+[[gates.extra]]
+name = "types"
+command = "python3 -m mypy ."
+```
