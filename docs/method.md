@@ -70,9 +70,13 @@ does not rewrite a project decision.
     └───────────── New rule / new ticket (learning) ◄──────────────┘
 ```
 
-1. **Intent.** The person states a goal, or the agent proposes one after an audit.
+1. **Intent.** The person states a goal, or the agent proposes one after an audit. Often it is
+   clarified first in a free conversation with the agent. That conversation is a means, not the
+   contract: it is lost between sessions, so what was decided must be written into tickets.
 2. **Ticket.** It is formalised with a technical scope and verifiable acceptance criteria
-   (`ticket-author`).
+   (`ticket-author`). When it comes from a conversation, the agent first summarises what was agreed,
+   proposes the breakdown into tickets and waits for the person's approval before writing them; each
+   ticket keeps the decisions taken in its "Context and Decisions" section.
 3. **Execution** (`ticket-runner`): context first; plan and tests first; implementation; validation
    criterion by criterion with traceability to a test; the quality gates; independent review; backlog
    update; the closing commit; a report to the person.

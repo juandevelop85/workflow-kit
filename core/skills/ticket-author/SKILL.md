@@ -1,10 +1,11 @@
 ---
 name: ticket-author
 description: >-
-  Write a new ticket in the project's ticket directory with the standard structure (description,
-  technical scope, verifiable acceptance criteria, test plan) and register it in the backlog.
-  Activate when the user wants to create, formalise or break down an idea, an audit finding or a
-  bug into a ticket (e.g. 'create a ticket for…', 'formalise this as T2.3').
+  Write one or several tickets, from an idea or from a discussion with the user, in the project's
+  ticket directory with the standard structure (description, technical scope, verifiable acceptance
+  criteria, test plan) and register them in the backlog. Activate when the user wants to create,
+  formalise or break down an idea, an audit finding, a bug or a conversation into tickets (e.g.
+  'create a ticket for…', 'formalise this as T2.3', 'create the tickets from what we agreed').
 ---
 
 # Ticket author
@@ -22,6 +23,24 @@ Where tickets live, how they are numbered and what a status looks like come from
 2. Read one or two recent tickets of the same phase to match tone and level of detail.
 3. Locate the real code that is affected and cite it with relative links. A ticket that describes
    code nobody read lies; if something could not be checked, say so in the ticket.
+
+## 1b. From a conversation
+
+When the idea comes out of a discussion with the user (several tickets are often hiding in it), the
+conversation is not the contract: whatever is not written into a ticket is lost. Do not write files
+yet.
+
+1. **Summarise what was agreed:** the goal, the decisions taken and why, what was discarded, and the
+   points still open. Ask the user to confirm or correct it.
+2. **Propose the breakdown** as a list: id, title, dependencies, key acceptance criteria and a
+   one-line scope for each ticket. Apply "one ticket, one commit" and order them by dependency.
+3. **Wait for approval** of the breakdown. Open points are asked, not guessed; a ticket that depends
+   on one is marked as blocked in its Risks.
+4. **Then write the tickets** (sections 2 to 4), copying the decisions into each ticket's
+   "Context and Decisions" section so the ticket stands alone. Register them in the backlog in
+   dependency order.
+
+A single, already clear idea does not need steps 1 to 3.
 
 ## 2. Structure
 
