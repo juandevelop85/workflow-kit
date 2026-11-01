@@ -17,7 +17,7 @@ core/                 the installable, versioned core
   skills/             ticket-author, ticket-runner, quality-gate
   agents/             reviewer, test-auditor, security-reviewer
   commands/           /ticket-new /ticket-run /ticket-review /quality-gate /ticket-status /workflow-init
-  scripts/            workflow_check.py (the checker), workflow_init.py (project-layer generator)
+  scripts/            workflow_check.py (the checker, code in workflow_kit/), workflow_init.py (project-layer generator)
   presets/            rust, node, python
   templates/          ticket, backlog, rules, threat model, agent memory, config
 install.py            install / update / status

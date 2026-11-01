@@ -54,8 +54,15 @@ class NoProductInTheKit(unittest.TestCase):
 
 class CoreStructure(unittest.TestCase):
     def test_scripts_compile(self):
-        for path in list((KIT / "core/scripts").glob("*.py")) + [KIT / "install.py"]:
+        for path in list((KIT / "core/scripts").rglob("*.py")) + [KIT / "install.py"]:
             py_compile.compile(str(path), doraise=True)
+
+    def test_no_checker_module_is_large(self):
+        modules = list((KIT / "core/scripts/workflow_kit").rglob("*.py"))
+        self.assertGreater(len(modules), 1, "the checker package is missing")
+        for path in modules:
+            lines = len(path.read_text(encoding="utf-8").splitlines())
+            self.assertLessEqual(lines, 400, f"{path.name}: {lines} lines")
 
     def test_every_skill_agent_and_command_has_valid_frontmatter(self):
         for skill in sorted((KIT / "core/skills").iterdir()):

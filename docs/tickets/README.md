@@ -15,7 +15,7 @@ its own file in this directory; this table indexes them.
 | :--- | :--- | :--- | :--- |
 | 1 | [T1.1](T1.1-token-economy.md) | Token economy for the agent workflow | ✅ Done |
 | 1 | [T1.2](T1.2-dogfooding.md) | The kit applies its own workflow | ✅ Done |
-| 1 | [T1.3](T1.3-split-checker.md) | Split the checker into modules | ⏳ Pending |
+| 1 | [T1.3](T1.3-split-checker.md) | Split the checker into modules | ✅ Done |
 | 1 | [T1.4](T1.4-honest-backlog.md) | Honest closing and a stricter backlog | ⏳ Pending |
 | 1 | [T1.5](T1.5-proportional-ceremony.md) | Proportional ceremony: change lanes (ODD) | ⏳ Pending |
 | 1 | [T1.6](T1.6-read-only-reviewers.md) | Review agents that really are read-only | ⏳ Pending |
