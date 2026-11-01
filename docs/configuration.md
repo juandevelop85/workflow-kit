@@ -15,9 +15,11 @@ warning, invalid regular expressions an error. Switching a check or a gate off i
 | `[tickets].id_pattern` | `T\d+\.\d+` | Regex of a ticket id. |
 | `[tickets].file_glob` | `T*.md` | Ticket file names. |
 | `[tickets].header_status` | `^>\s*\*\*Status:\*\*\s*(.*)$` | The status line of a ticket. |
-| `[tickets].done_requires_section` | `Acceptance Criteria` | A done ticket must contain it (`""` disables). |
-| `[tickets.statuses]` | ✅ 🔄 ⏳ ⏸️ 📝 | Symbols for `done`, `in_progress`, `pending`, `deferred`, `proposed`. |
-| `[commits].pattern` | `^[a-z]+\([a-z0-9_-]+\): T\d+\.\d+ - .+` | Commit subject format (checked with `--commits N`). |
+| `[tickets].done_requires_section` | `Acceptance Criteria` | A done ticket must have this `##` section (`""` disables). |
+| `[tickets].done_min_criteria` | `1` | Items (`-`, `*`, `1.`) that section must list for the ticket to be done. |
+| `[tickets.statuses]` | ✅ 🔄 ⏳ ⏸️ 📝 | Symbols for `done`, `in_progress`, `pending`, `deferred`, `proposed`. Compared without the emoji variation selector, so `⏸` equals `⏸️`. |
+| `[commits].pattern` | `^[a-z]+\([a-z0-9_-]+\): (?:<id_pattern>) - .+` | Commit subject format (checked with `--commits N`); the default is built from `[tickets].id_pattern`. The ticket id a commit cites must be in the backlog. |
+| `[commits].since` | | A ref: only commits after it are checked. Exempts, explicitly, the history from before the project adopted the kit. |
 | `[commits].format_hint` | `<type>(<area>): <TID> - <title>` | Shown in the error message. |
 | `[size].warn_lines` / `error_lines` | 800 / 1500 | Warn / fail above these. |
 | `[size].include` / `exclude` | from the preset | Globs (`**` crosses directories). `.agents/` and `.claude/` are always excluded. |

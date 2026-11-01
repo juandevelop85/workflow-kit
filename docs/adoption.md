@@ -35,6 +35,10 @@ python3 .agents/scripts/workflow_check.py          # backlog, closing, sizes
 python3 .agents/scripts/workflow_check.py gates    # the gates it resolved for your stack
 ```
 
+Existing history: `--commits N` checks that each commit cites a ticket of the backlog, so commits
+from before the adoption would fail. Set `[commits].since = "<last commit before the kit>"` to
+exempt them explicitly (CI needs the full history for that ref: `fetch-depth: 0`).
+
 A fresh install passes with no errors. Run the gates yourself once to see they work for your project;
 override a command in `workflow.toml` if your project uses other tools.
 

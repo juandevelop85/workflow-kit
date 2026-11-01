@@ -17,6 +17,11 @@ Dogfooding: the kit is developed with its own workflow (project layer in `.agent
 The checker is a package (`.agents/scripts/workflow_kit/`, no module over 400 lines); the entry
 point `workflow_check.py` and its subcommands are unchanged.
 
+Honest backlog: a done ticket needs a real criteria section with `done_min_criteria` items; statuses
+ignore the emoji variation selector; duplicate ids, links to the wrong file and commits citing a
+ticket outside the backlog are errors; `[commits].since` exempts pre-adoption history explicitly. **Breaking:** the criteria heading must
+be exactly `## Acceptance Criteria` (a `###` heading or extra words no longer count).
+
 Hardened before the first release against an untrusted target repository (path traversal through a
 doctored manifest or through symlinks, execution of a script found in the target, configuration
 injection through generator arguments); each attack is a regression test in `tests/test_security.py`.

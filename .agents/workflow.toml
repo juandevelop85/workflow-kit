@@ -19,6 +19,8 @@ done_requires_section = "Acceptance Criteria"
 [commits]
 pattern = '^[a-z]+\([a-z0-9_-]+\): T\d+\.\d+ - .+'
 format_hint = "<type>(<area>): <TID> - <title>"
+# The commits before the kit adopted its own workflow cite T43.1, a ticket of another project.
+since = "ca83c04c47a12bba445da448a6548631b240b89d"
 
 [size]
 warn_lines = 800

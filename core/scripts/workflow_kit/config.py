@@ -13,7 +13,8 @@ DEFAULT_STATUSES = {
     "deferred": "⏸️",
     "proposed": "📝",
 }
-DEFAULT_COMMIT_PATTERN = r"^[a-z]+\([a-z0-9_-]+\): T\d+\.\d+ - .+"
+# Built from `[tickets].id_pattern` (see `commit_pattern`).
+DEFAULT_COMMIT_TEMPLATE = r"^[a-z]+\([a-z0-9_-]+\): (?:{id}) - .+"
 KNOWN_TOP_LEVEL = {"project", "tickets", "commits", "size", "gates", "sensitive", "checks", "efficiency"}
 KNOWN_CHECKS = ("backlog", "honest_closing", "sizes")
 EFFICIENCY_DEFAULTS = {
@@ -53,10 +54,17 @@ def tickets_cfg(cfg: dict) -> dict:
     t.setdefault("file_glob", "T*.md")
     t.setdefault("header_status", r"^>\s*\*\*Status:\*\*\s*(.*)$")
     t.setdefault("done_requires_section", "Acceptance Criteria")
+    t.setdefault("done_min_criteria", 1)
     statuses = dict(DEFAULT_STATUSES)
     statuses.update(t.get("statuses", {}))
     t["statuses"] = statuses
     return t
+
+
+def commit_pattern(cfg: dict) -> str:
+    """The configured commit pattern, or the default built from the ticket id pattern."""
+    default = DEFAULT_COMMIT_TEMPLATE.replace("{id}", tickets_cfg(cfg)["id_pattern"])
+    return cfg.get("commits", {}).get("pattern", default)
 
 
 def validate_config(cfg: dict, errors: list[str], warnings: list[str]) -> None:
@@ -69,11 +77,19 @@ def validate_config(cfg: dict, errors: list[str], warnings: list[str]) -> None:
             re.compile(t[field])
         except re.error as exc:
             errors.append(f"workflow.toml: [tickets].{field} is not a valid regex: {exc}")
-    pattern = cfg.get("commits", {}).get("pattern", DEFAULT_COMMIT_PATTERN)
+    pattern = commit_pattern(cfg)
     try:
         re.compile(pattern)
     except re.error as exc:
         errors.append(f"workflow.toml: [commits].pattern is not a valid regex: {exc}")
+    plain = {k: str(v).replace("\ufe0f", "") for k, v in t["statuses"].items()}
+    for a in plain:
+        for b in plain:
+            if a < b and (plain[a] in plain[b] or plain[b] in plain[a]):
+                errors.append(f"workflow.toml: statuses «{a}» and «{b}» cannot be told apart")
+    minimum = t["done_min_criteria"]
+    if isinstance(minimum, bool) or not isinstance(minimum, int) or minimum < 0:
+        errors.append("workflow.toml: [tickets].done_min_criteria must be a whole number >= 0")
     for key, value in cfg.get("efficiency", {}).items():
         default = EFFICIENCY_DEFAULTS.get(key)
         if default is None:

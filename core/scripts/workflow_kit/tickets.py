@@ -8,11 +8,27 @@ import sys
 from .config import ConfigError, load_config, tickets_cfg
 
 
+VARIATION_SELECTOR = "\ufe0f"
+
+
 def status_of(text: str, statuses: dict):
+    """The status symbol found in `text`; `⏸` and `⏸️` (with U+FE0F) are the same symbol."""
+    plain = text.replace(VARIATION_SELECTOR, "")
     for symbol in statuses.values():
-        if symbol in text:
+        if symbol.replace(VARIATION_SELECTOR, "") in plain:
             return symbol
     return None
+
+
+def parse_backlog(backlog: pathlib.Path, id_pattern: str) -> list[tuple[str, str, str]]:
+    """(ticket id, link, status cell) for every ticket row of the backlog table, in order."""
+    row_re = re.compile(rf"^\|.*?\[({id_pattern})\]\(([^)]+)\).*\|\s*(.*?)\s*\|\s*$")
+    rows = []
+    for line in backlog.read_text(encoding="utf-8").splitlines():
+        m = row_re.match(line)
+        if m:
+            rows.append(m.groups())
+    return rows
 
 
 def ticket_file(root: pathlib.Path, cfg: dict, tid: str) -> pathlib.Path | None:
@@ -24,25 +40,39 @@ def ticket_file(root: pathlib.Path, cfg: dict, tid: str) -> pathlib.Path | None:
 
 
 def section_of(body: str, title: str) -> str:
-    m = re.search(rf"^##\s+{re.escape(title)}\s*$(.*?)(?=^##\s|\Z)", body, re.MULTILINE | re.DOTALL)
-    return m.group(1).strip() if m else ""
+    """The text under `## <title>` up to the next `## ` heading; headings inside code fences do not count."""
+    out, inside, fenced = [], False, False
+    for line in body.splitlines():
+        if line.lstrip().startswith(("```", "~~~")):
+            fenced = not fenced
+        elif not fenced and re.match(r"^##\s", line):
+            inside = re.fullmatch(rf"##\s+{re.escape(title)}\s*", line) is not None
+            continue
+        if inside:
+            out.append(line)
+    return "\n".join(out).strip()
 
 
 def count_criteria(body: str, section: str) -> int:
-    return len(re.findall(r"^\s*(?:[-*+]|\d+[.)])\s+\S", section_of(body, section), re.MULTILINE))
+    """Top-level list items with text (`-`, `*`, `+`, `1.`), outside code fences; `- [ ]` alone is empty."""
+    count, fenced = 0, False
+    for line in section_of(body, section).splitlines():
+        if line.lstrip().startswith(("```", "~~~")):
+            fenced = not fenced
+        elif not fenced:
+            item = re.match(r"^ ?(?:[-*+]|\d+[.)])\s+(.*)$", line)
+            text = re.sub(r"^\[[ xX]\]", "", item.group(1)).strip() if item else ""
+            if text and not re.fullmatch(r"[-*_ ]+", text):
+                count += 1
+    return count
 
 
 def backlog_rows(root: pathlib.Path, cfg: dict) -> dict[str, str]:
     t = tickets_cfg(cfg)
     backlog = root / t["backlog"]
-    row_re = re.compile(rf"^\|.*?\[({t['id_pattern']})\]\(([^)]+)\).*\|\s*(.*?)\s*\|\s*$")
-    rows: dict[str, str] = {}
-    if backlog.exists():
-        for line in backlog.read_text(encoding="utf-8").splitlines():
-            m = row_re.match(line)
-            if m:
-                rows[m.group(1)] = m.group(3)
-    return rows
+    if not backlog.exists():
+        return {}
+    return {tid: status for tid, _, status in parse_backlog(backlog, t["id_pattern"])}
 
 
 def run_context(root: pathlib.Path, tid: str) -> int:
@@ -69,7 +99,7 @@ def run_context(root: pathlib.Path, tid: str) -> int:
         print("depends on:")
         for dep in deps:
             status = rows.get(dep, "not in the backlog")
-            done = t["statuses"]["done"] in status
+            done = status_of(status, t["statuses"]) == t["statuses"]["done"]
             print(f"  {dep}: {status}" + ("" if done else "   <-- NOT DONE"))
     else:
         print("depends on: none")

@@ -78,7 +78,7 @@ class CheckerOnThreeStacks(TempDirMixin, unittest.TestCase):
                 ticket.write_text(ticket.read_text().replace("## Acceptance Criteria", "## Notes"))
                 result = checker(repo)
                 self.assertEqual(result.returncode, 1)
-                self.assertIn("marked done but has no «Acceptance Criteria» section", result.stdout)
+                self.assertIn("marked done but has no «## Acceptance Criteria» heading", result.stdout)
 
     def test_detects_a_file_over_the_limit_and_only_warns_between_the_two(self):
         for stack, repo in self.each_stack():
