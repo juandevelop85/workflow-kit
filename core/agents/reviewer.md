@@ -31,8 +31,11 @@ branch.
 
 ## Output
 
-A list ordered by severity. For each finding: `file:line`, what fails, a concrete scenario that
-demonstrates it, and a suggested fix. Mark each one **BLOCKING** (must be fixed before closing) or
-**OPTIONAL** (an improvement). End with a verdict: `APPROVED`, `APPROVED WITH OPTIONALS` or
-`CHANGES REQUIRED`. Do not invent findings to look useful: if there is nothing, say so and say what
-you checked.
+Your report is read in full by the agent that implemented the change, so keep it short: at most 10
+findings, ordered by severity, **one finding per line** and no introduction or recap:
+
+`BLOCKING|OPTIONAL file:line - what fails - scenario that breaks it - fix`
+
+Drop the lowest-value findings before exceeding the cap and say how many you dropped. End with a
+verdict: `APPROVED`, `APPROVED WITH OPTIONALS` or `CHANGES REQUIRED`. Do not invent findings to look
+useful: if there is nothing, give the verdict and one line saying what you checked.

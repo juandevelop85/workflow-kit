@@ -114,6 +114,7 @@ does not rewrite a project decision.
 | `test-auditor` (agent) | Checks that each criterion has a test that would fail if the code were wrong. |
 | `security-reviewer` (agent) | Reviews sensitive surfaces with an attacker's mindset, against the project's threat model. |
 | `workflow_check.py` | Backlog coherence, honest closing, file sizes, commit format; lists the gates; finds sensitive changes. |
+| Token economy | The skills read a compact `context` brief instead of the whole backlog; `review-plan` skips review subagents for tiny or docs-only diffs; `gates --run` logs gate output to a file and reports one line per gate; the review agents return one line per finding with a cap, and `test-auditor` runs on a cheaper model (`model:` in its frontmatter; change it there). |
 | Commands | `/ticket-new`, `/ticket-run`, `/ticket-review`, `/quality-gate`, `/ticket-status`, `/workflow-init`. |
 
 ## 7. What to add next

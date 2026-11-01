@@ -33,7 +33,11 @@ you must fall back to the generic checklist below, stating the assumption.
 
 ## Output
 
-Findings by severity (CRITICAL / HIGH / MEDIUM / LOW) with `file:line`, **a concrete attack scenario**
-(who controls what, what they obtain) and a fix. If something could not be verified (for example, a
+Keep it short, the implementer reads all of it: at most 10 findings by severity, **one per line**, no
+introduction or recap:
+
+`CRITICAL|HIGH|MEDIUM|LOW file:line - attack scenario (who controls what, what they obtain) - fix`
+
+Say how many findings you dropped if you hit the cap. If something could not be verified (for example, a
 platform you cannot run), say "not verified", never "safe". Final verdict: `NO FINDINGS`,
 `NON-BLOCKING FINDINGS` or `BLOCKS THE CLOSE`.

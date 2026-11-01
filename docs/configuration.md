@@ -26,6 +26,11 @@ warning, invalid regular expressions an error. Switching a check or a gate off i
 | `[gates.override.<name>]` | | `command = "…"` or `enabled = false`. |
 | `[[gates.extra]]` | | `name` and `command` of an extra gate. |
 | `[sensitive].globs` | `[]` | Paths that require a security review. |
+| `[efficiency].light_max_lines` | `30` | A non-docs diff up to this size is self-reviewed, with no reviewer subagent. |
+| `[efficiency].auditor_min_criteria` | `3` | `review-plan --ticket` adds `test-auditor` from this many acceptance criteria. |
+| `[efficiency].gate_tail_lines` | `15` | Lines of a failing gate shown by `gates --run`. |
+| `[efficiency].gate_timeout_seconds` | `1800` | A gate running longer is reported as failed. |
+| `[efficiency].doc_globs` | `**/*.md`, `**/*.txt`, `docs/**` | A diff made only of these is "docs-only". |
 | `[checks].backlog` / `honest_closing` / `sizes` | `true` | Switch a check off (it is then reported on every run). |
 
 ## Subcommands
@@ -34,7 +39,16 @@ warning, invalid regular expressions an error. Switching a check or a gate off i
 python3 .agents/scripts/workflow_check.py [check] [--commits N]   # exit 1 on any error
 python3 .agents/scripts/workflow_check.py gates [--json]          # name<TAB>command per gate
 python3 .agents/scripts/workflow_check.py sensitive [--base REF] [paths…]
+python3 .agents/scripts/workflow_check.py context TID             # compact brief of one ticket
+python3 .agents/scripts/workflow_check.py review-plan [--ticket TID] [--base REF] [--json]
+python3 .agents/scripts/workflow_check.py gates --run [--tail N]  # PASS/FAIL per gate, full output in a log
 ```
+
+The last three exist to save tokens (see `[efficiency]`): `context` replaces reading the whole backlog
+and ticket, `review-plan` decides which review subagents are worth their cost for this diff, and
+`gates --run` keeps passing output out of the conversation. Gate logs go to `.agents/.cache/gates/`,
+which ignores itself in git. `gates --run` executes the commands of `workflow.toml` through the shell,
+exactly like running them by hand: use it only on repositories you trust.
 
 ## Presets
 

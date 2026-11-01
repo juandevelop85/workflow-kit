@@ -13,6 +13,13 @@ gates      print the quality gates of the project, one `name<TAB>command` per
            line, resolved from the stack preset plus the project overrides.
 sensitive  print the changed files that match the project's sensitive
            surfaces (the ones that require a security review).
+context    print a compact brief of one ticket (status, dependencies and their
+           status, acceptance criteria, rules to read) so the agent does not
+           have to read the whole backlog.
+review-plan  measure the diff and say which independent reviewers are worth
+           launching (a tiny or docs-only change gets a self-review checklist).
+gates --run  run the gates, keep the full output in a log file and print one
+           line per gate (plus the tail of the ones that fail).
 
 Every check or gate that the project has switched off is reported as a
 warning on each run: a rule that can be silenced without anyone noticing is
@@ -28,6 +35,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import time
 import tomllib
 
 DEFAULT_STATUSES = {
@@ -38,9 +46,17 @@ DEFAULT_STATUSES = {
     "proposed": "📝",
 }
 DEFAULT_COMMIT_PATTERN = r"^[a-z]+\([a-z0-9_-]+\): T\d+\.\d+ - .+"
-KNOWN_TOP_LEVEL = {"project", "tickets", "commits", "size", "gates", "sensitive", "checks"}
+KNOWN_TOP_LEVEL = {"project", "tickets", "commits", "size", "gates", "sensitive", "checks", "efficiency"}
 KNOWN_CHECKS = ("backlog", "honest_closing", "sizes")
 ALWAYS_SKIPPED_DIRS = {".git"}
+EFFICIENCY_DEFAULTS = {
+    "light_max_lines": 30,        # a non-docs diff this small is self-reviewed
+    "auditor_min_criteria": 3,    # launch test-auditor from this many criteria
+    "gate_tail_lines": 15,        # lines of a failing gate shown in the report
+    "gate_timeout_seconds": 1800,
+    "doc_globs": ["**/*.md", "**/*.txt", "docs/**"],
+}
+CACHE_DIR = ".agents/.cache/gates"
 # A repository can carry a configuration that makes git run a command (`core.fsmonitor`): switch
 # that off. Run this checker only on repositories you would run `git` on.
 GIT = ["git", "-c", "core.fsmonitor=false"]
@@ -96,12 +112,26 @@ def validate_config(cfg: dict, errors: list[str], warnings: list[str]) -> None:
         re.compile(pattern)
     except re.error as exc:
         errors.append(f"workflow.toml: [commits].pattern is not a valid regex: {exc}")
+    for key, value in cfg.get("efficiency", {}).items():
+        default = EFFICIENCY_DEFAULTS.get(key)
+        if default is None:
+            warnings.append(f"workflow.toml: unknown key «{key}» in [efficiency] (ignored)")
+        elif isinstance(default, list) != isinstance(value, list) or (
+            isinstance(default, int) and (isinstance(value, bool) or not isinstance(value, int) or value < 0)
+        ):
+            errors.append(f"workflow.toml: [efficiency].{key} has an invalid value")
     checks = cfg.get("checks", {})
     for name, enabled in checks.items():
         if name not in KNOWN_CHECKS:
             warnings.append(f"workflow.toml: unknown check «{name}» in [checks]")
         elif enabled is False:
             warnings.append(f"check «{name}» is DISABLED in workflow.toml")
+
+
+def efficiency(cfg: dict) -> dict:
+    out = dict(EFFICIENCY_DEFAULTS)
+    out.update(cfg.get("efficiency", {}))
+    return out
 
 
 def check_enabled(cfg: dict, name: str) -> bool:
@@ -359,26 +389,215 @@ def run_sensitive(root: pathlib.Path, base: str | None, files: list[str]) -> int
     return 0
 
 
+def ticket_file(root: pathlib.Path, cfg: dict, tid: str) -> pathlib.Path | None:
+    t = tickets_cfg(cfg)
+    for path in sorted((root / t["dir"]).glob(t["file_glob"])):
+        if path.name.startswith(tid) and not path.name[len(tid):len(tid) + 1].isdigit():
+            return path
+    return None
+
+
+def section_of(body: str, title: str) -> str:
+    m = re.search(rf"^##\s+{re.escape(title)}\s*$(.*?)(?=^##\s|\Z)", body, re.MULTILINE | re.DOTALL)
+    return m.group(1).strip() if m else ""
+
+
+def count_criteria(body: str, section: str) -> int:
+    return len(re.findall(r"^\s*(?:[-*+]|\d+[.)])\s+\S", section_of(body, section), re.MULTILINE))
+
+
+def backlog_rows(root: pathlib.Path, cfg: dict) -> dict[str, str]:
+    t = tickets_cfg(cfg)
+    backlog = root / t["backlog"]
+    row_re = re.compile(rf"^\|.*?\[({t['id_pattern']})\]\(([^)]+)\).*\|\s*(.*?)\s*\|\s*$")
+    rows: dict[str, str] = {}
+    if backlog.exists():
+        for line in backlog.read_text(encoding="utf-8").splitlines():
+            m = row_re.match(line)
+            if m:
+                rows[m.group(1)] = m.group(3)
+    return rows
+
+
+def run_context(root: pathlib.Path, tid: str) -> int:
+    try:
+        cfg = load_config(root)
+    except ConfigError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    t = tickets_cfg(cfg)
+    path = ticket_file(root, cfg, tid)
+    if path is None:
+        print(f"ERROR: no ticket file for {tid} in {t['dir']}", file=sys.stderr)
+        return 1
+    body = path.read_text(encoding="utf-8")
+    rows = backlog_rows(root, cfg)
+    title = body.splitlines()[0].lstrip("# ").strip() if body else tid
+    m = re.search(t["header_status"], body, re.MULTILINE)
+    print(f"ticket: {title}")
+    print(f"file: {path.relative_to(root).as_posix()}")
+    print(f"status: backlog «{rows.get(tid, 'not in the backlog')}», header «{m.group(1).strip() if m else 'none'}»")
+    dep_line = re.search(r"^>\s*\*\*Depends on:\*\*\s*(.*)$", body, re.MULTILINE)
+    deps = re.findall(t["id_pattern"], dep_line.group(1)) if dep_line else []
+    if deps:
+        print("depends on:")
+        for dep in deps:
+            status = rows.get(dep, "not in the backlog")
+            done = t["statuses"]["done"] in status
+            print(f"  {dep}: {status}" + ("" if done else "   <-- NOT DONE"))
+    else:
+        print("depends on: none")
+    print("rules to read: " + (", ".join(cfg.get("project", {}).get("rules", [])) or "none"))
+    for heading in ("Description", "Technical Scope", "Acceptance Criteria"):
+        text = section_of(body, heading)
+        print(f"\n## {heading}\n{text or '(missing)'}")
+    return 0
+
+
+def numstat(root: pathlib.Path, *args: str) -> dict[str, int]:
+    res = subprocess.run([*GIT, "diff", "--numstat", *args], cwd=root, capture_output=True, text=True)
+    out: dict[str, int] = {}
+    for line in res.stdout.splitlines() if res.returncode == 0 else []:
+        added, removed, name = (line.split("\t", 2) + ["", ""])[:3]
+        out[name] = out.get(name, 0) + sum(int(n) for n in (added, removed) if n.isdigit())
+    return out
+
+
+def diff_size(root: pathlib.Path, base: str | None) -> dict[str, int]:
+    sizes = numstat(root, "HEAD")
+    if base:
+        for name, n in numstat(root, f"{base}...HEAD").items():
+            sizes[name] = max(sizes.get(name, 0), n)
+    untracked = subprocess.run([*GIT, "ls-files", "--others", "--exclude-standard"], cwd=root,
+                               capture_output=True, text=True).stdout.splitlines()
+    for name in untracked:
+        path = root / name
+        if path.is_file() and not path.is_symlink():
+            sizes[name] = sum(1 for _ in path.open(encoding="utf-8", errors="replace"))
+    return sizes
+
+
+def plan_review(root: pathlib.Path, cfg: dict, base: str | None, tid: str | None, files: dict[str, int]) -> dict:
+    eff = efficiency(cfg)
+    total = sum(files.values())
+    docs = [glob_to_regex(g) for g in eff["doc_globs"]]
+    docs_only = bool(files) and all(any(r.match(f) for r in docs) for f in files)
+    sens = [glob_to_regex(g) for g in cfg.get("sensitive", {}).get("globs", [])]
+    sensitive = sorted(f for f in files if any(r.match(f) for r in sens))
+    criteria = None
+    if tid:
+        path = ticket_file(root, cfg, tid)
+        if path:
+            criteria = count_criteria(path.read_text(encoding="utf-8"),
+                                      tickets_cfg(cfg)["done_requires_section"] or "Acceptance Criteria")
+    launch, reasons = [], []
+    if not files:
+        reasons.append("no changes")
+    elif docs_only or total <= eff["light_max_lines"]:
+        reasons.append(("docs-only change" if docs_only else f"{total} changed lines <= {eff['light_max_lines']}")
+                       + ": self-review against the ticket and the rules, no subagent")
+    else:
+        launch.append("reviewer")
+        reasons.append(f"{total} changed lines in {len(files)} file(s)")
+        if criteria is not None and criteria >= eff["auditor_min_criteria"]:
+            launch.append("test-auditor")
+            reasons.append(f"{criteria} acceptance criteria >= {eff['auditor_min_criteria']}")
+    if sensitive:
+        launch.append("security-reviewer")
+        reasons.append("touches a sensitive surface: " + ", ".join(sensitive))
+    return {"files": len(files), "lines": total, "docs_only": docs_only, "criteria": criteria,
+            "launch": launch, "reasons": reasons}
+
+
+def run_review_plan(root: pathlib.Path, base: str | None, tid: str | None, as_json: bool) -> int:
+    try:
+        cfg = load_config(root)
+    except ConfigError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    plan = plan_review(root, cfg, base, tid, diff_size(root, base))
+    if as_json:
+        print(json.dumps(plan, indent=2))
+    else:
+        print(f"diff: {plan['files']} file(s), {plan['lines']} changed line(s)")
+        print("launch: " + (" ".join(plan["launch"]) or "none"))
+        print("why: " + "; ".join(plan["reasons"]))
+    return 0
+
+
+def run_gates_report(root: pathlib.Path, tail: int | None) -> int:
+    """Run every gate; keep the full output on disk, print only what a decision needs."""
+    try:
+        cfg = load_config(root)
+        gates, warnings = resolve_gates(root, cfg)
+    except ConfigError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    eff = efficiency(cfg)
+    tail = eff["gate_tail_lines"] if tail is None else tail
+    for w in warnings:
+        print(f"warning: {w}")
+    logs = root / CACHE_DIR
+    logs.mkdir(parents=True, exist_ok=True)
+    (root / ".agents/.cache/.gitignore").write_text("*\n", encoding="utf-8")
+    failed = 0
+    for gate in gates:
+        log = logs / f"{re.sub(r'[^A-Za-z0-9_.-]', '_', gate['name'])}.log"
+        started = time.monotonic()
+        try:
+            res = subprocess.run(gate["command"], shell=True, cwd=root, capture_output=True, text=True,
+                                 errors="replace", timeout=eff["gate_timeout_seconds"])
+            code, output = res.returncode, res.stdout + res.stderr
+        except subprocess.TimeoutExpired as exc:
+            code, output = 124, f"timed out after {eff['gate_timeout_seconds']}s\n{exc.stdout or ''}"
+        log.write_text(output if isinstance(output, str) else output.decode(errors="replace"), encoding="utf-8")
+        took = time.monotonic() - started
+        rel = log.relative_to(root).as_posix()
+        if code == 0:
+            print(f"PASS {gate['name']} ({took:.1f}s)")
+        else:
+            failed += 1
+            print(f"FAIL {gate['name']} (exit {code}, {took:.1f}s) full output: {rel}")
+            for line in output.splitlines()[-tail:] if tail else []:
+                print(f"  | {line}")
+    print(f"\n{len(gates)} gate(s): {len(gates) - failed} passed, {failed} failed")
+    return 1 if failed else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    if not argv or argv[0].startswith("-") or argv[0] not in {"check", "gates", "sensitive"}:
+    if not argv or argv[0].startswith("-") or argv[0] not in {"check", "gates", "sensitive", "context", "review-plan"}:
         argv.insert(0, "check")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     default_root = str(pathlib.Path(__file__).resolve().parents[2])
-    for name in ("check", "gates", "sensitive"):
+    for name in ("check", "gates", "sensitive", "context", "review-plan"):
         p = sub.add_parser(name)
         p.add_argument("--root", default=default_root)
         if name == "check":
             p.add_argument("--commits", type=int, default=0, help="also check the last N commit subjects")
         if name == "gates":
             p.add_argument("--json", action="store_true")
+            p.add_argument("--run", action="store_true", help="run the gates and print a compact report")
+            p.add_argument("--tail", type=int, default=None, help="lines of a failing gate to show (with --run)")
+        if name == "context":
+            p.add_argument("ticket", help="ticket id, e.g. T1.1")
+        if name == "review-plan":
+            p.add_argument("--base", default=None, help="also count changes since this ref")
+            p.add_argument("--ticket", default=None, help="ticket id, to count its acceptance criteria")
+            p.add_argument("--json", action="store_true")
         if name == "sensitive":
             p.add_argument("--base", default=None, help="also include files changed since this ref")
             p.add_argument("files", nargs="*", help="check these paths instead of the git changes")
     args = ap.parse_args(argv)
     root = pathlib.Path(args.root)
+    if args.cmd == "context":
+        return run_context(root, args.ticket)
+    if args.cmd == "review-plan":
+        return run_review_plan(root, args.base, args.ticket, args.json)
     if args.cmd == "gates":
+        if args.run:
+            return run_gates_report(root, args.tail)
         return run_gates(root, args.json)
     if args.cmd == "sensitive":
         return run_sensitive(root, args.base, args.files)
