@@ -1,0 +1,33 @@
+# workflow-kit · Project rules
+
+These rules are read by every agent before it works on the kit itself.
+
+## Architecture and conventions
+
+- `core/` is the product: what `install.py` copies into other repositories. It never names a
+  product, a language or a directory layout (`tests/test_kit_hygiene.py` checks it).
+- In this repository `.agents/` holds the project layer of the kit itself; its `agents`, `commands`,
+  `scripts`, `presets`, `skills` and `templates` are symlinks to `core/`. Never copy core files into
+  `.agents/`: edit them in `core/`.
+- Python 3.11+, standard library only, for the scripts and the tests. The tests use `unittest` and
+  run the scripts as a user would (subprocess over throwaway repositories built from the fixtures).
+- Every security property of the installer or the generator has a regression test in
+  `tests/test_security.py`.
+
+## Language policy
+
+Identifiers, comments and documentation are written in English. Conversation with the user follows
+the user's language.
+
+## Change flow
+
+- Every change corresponds to a ticket in `docs/tickets/`.
+- One ticket, one commit, with the format `<type>(<area>): <TID> - <title>`.
+- Moving code never mixes with changing behaviour.
+- The kit must pass its own checker: `python3 .agents/scripts/workflow_check.py --commits 20`
+  (`tests/test_dogfood.py` runs it).
+
+## Rules learned
+
+- A feature is not "in the changelog" until it is committed (T1.1: the token economy was described
+  as released while still uncommitted).

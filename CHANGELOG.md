@@ -11,6 +11,9 @@ subagents this diff deserves), `gates --run` (one line per gate, full output in 
 capped one-line-per-finding output for the three review agents, and a cheaper model for
 `test-auditor`. Tunable in `[efficiency]`.
 
+Dogfooding: the kit is developed with its own workflow (project layer in `.agents/`, backlog in
+`docs/tickets/`, `tests/test_dogfood.py` runs the checker over the kit).
+
 Hardened before the first release against an untrusted target repository (path traversal through a
 doctored manifest or through symlinks, execution of a script found in the target, configuration
 injection through generator arguments); each attack is a regression test in `tests/test_security.py`.

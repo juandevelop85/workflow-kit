@@ -1,0 +1,50 @@
+# workflow-kit applies its own workflow to itself (dogfooding).
+# In this repository the core is not installed: `.agents/{agents,commands,scripts,presets,skills,templates}`
+# are symlinks to `core/`, so every change to the core is used by the next session at once.
+
+[project]
+name = "workflow-kit"
+rules = [".agents/rules/project.md"]
+security_model = ".agents/security-model.md"
+language_policy = "Identifiers, comments and documentation are written in English; conversation with the user follows the user's language."
+
+[tickets]
+dir = "docs/tickets"
+backlog = "docs/tickets/README.md"
+id_pattern = 'T\d+\.\d+'
+file_glob = "T*.md"
+header_status = '^>\s*\*\*Status:\*\*\s*(.*)$'
+done_requires_section = "Acceptance Criteria"
+
+[commits]
+pattern = '^[a-z]+\([a-z0-9_-]+\): T\d+\.\d+ - .+'
+format_hint = "<type>(<area>): <TID> - <title>"
+
+[size]
+warn_lines = 800
+error_lines = 1500
+baseline = ".agents/baseline.txt"
+include = ["**/*.py"]
+# The fixtures imitate other projects (with their own vendored folders); they are test data.
+exclude = ["tests/fixtures/**", "**/__pycache__/**"]
+
+[gates]
+# The kit uses only the standard library: no ruff or pytest to install.
+preset = "none"
+
+[[gates.extra]]
+name = "test"
+command = "python3 -m unittest discover -s tests -q"
+
+[[gates.extra]]
+name = "compile"
+command = "python3 -m compileall -q install.py core/scripts tests"
+
+[sensitive]
+# Code that writes into, or executes inside, a repository the kit does not control.
+globs = ["install.py", "core/scripts/workflow_init.py", "core/presets/**", "core/agents/**"]
+
+[checks]
+backlog = true
+honest_closing = true
+sizes = true

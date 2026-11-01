@@ -22,6 +22,7 @@ core/                 the installable, versioned core
   templates/          ticket, backlog, rules, threat model, agent memory, config
 install.py            install / update / status
 tests/                the kit's own tests, with fixtures for three stacks
+.agents/ docs/tickets/  the kit's own workflow: developed with itself (core linked, not copied)
 ```
 
 ## Quick start
