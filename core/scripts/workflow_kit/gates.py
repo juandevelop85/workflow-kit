@@ -9,6 +9,7 @@ import sys
 import time
 import tomllib
 
+from .cache import UnsafeCache, cache_write
 from .config import CACHE_DIR, ConfigError, efficiency, kit_dir, load_config
 
 
@@ -71,12 +72,9 @@ def run_gates_report(root: pathlib.Path, tail: int | None) -> int:
     tail = eff["gate_tail_lines"] if tail is None else tail
     for w in warnings:
         print(f"warning: {w}")
-    logs = root / CACHE_DIR
-    logs.mkdir(parents=True, exist_ok=True)
-    (root / ".agents/.cache/.gitignore").write_text("*\n", encoding="utf-8")
     failed = 0
     for gate in gates:
-        log = logs / f"{re.sub(r'[^A-Za-z0-9_.-]', '_', gate['name'])}.log"
+        rel = f"{CACHE_DIR}/{re.sub(r'[^A-Za-z0-9_.-]', '_', gate['name'])}.log"
         started = time.monotonic()
         try:
             res = subprocess.run(gate["command"], shell=True, cwd=root, capture_output=True, text=True,
@@ -84,9 +82,12 @@ def run_gates_report(root: pathlib.Path, tail: int | None) -> int:
             code, output = res.returncode, res.stdout + res.stderr
         except subprocess.TimeoutExpired as exc:
             code, output = 124, f"timed out after {eff['gate_timeout_seconds']}s\n{exc.stdout or ''}"
-        log.write_text(output if isinstance(output, str) else output.decode(errors="replace"), encoding="utf-8")
+        try:
+            cache_write(root, rel, output if isinstance(output, str) else output.decode(errors="replace"))
+        except UnsafeCache as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
         took = time.monotonic() - started
-        rel = log.relative_to(root).as_posix()
         if code == 0:
             print(f"PASS {gate['name']} ({took:.1f}s)")
         else:

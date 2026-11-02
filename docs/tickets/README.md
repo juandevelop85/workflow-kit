@@ -18,4 +18,5 @@ its own file in this directory; this table indexes them.
 | 1 | [T1.3](T1.3-split-checker.md) | Split the checker into modules | ✅ Done |
 | 1 | [T1.4](T1.4-honest-backlog.md) | Honest closing and a stricter backlog | ✅ Done |
 | 1 | [T1.5](T1.5-proportional-ceremony.md) | Proportional ceremony: change lanes (ODD) | ✅ Done |
-| 1 | [T1.6](T1.6-read-only-reviewers.md) | Review agents that really are read-only | ⏳ Pending |
+| 1 | [T1.6](T1.6-read-only-reviewers.md) | Review agents that really are read-only | ✅ Done |
+| 1 | [T1.7](T1.7-neutral-git-config.md) | Run git with a neutral configuration | ⏳ Pending |

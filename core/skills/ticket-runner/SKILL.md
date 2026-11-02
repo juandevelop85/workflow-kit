@@ -50,9 +50,12 @@ first; do not assume them.**
    (or documented inspection) that covers each. A criterion without a test is declared, not met.
 2. **Gates.** Run the `quality-gate` skill. No gate may be red.
 3. **Independent review.** Before the commit, run
-   `python3 .agents/scripts/workflow_check.py review-plan --ticket <TID>`. It measures the diff and
-   prints which of `reviewer`, `test-auditor` and `security-reviewer` to launch, and why. Launch
-   exactly those. When it prints `launch: none`, do a written self-review of the diff against the
+   `python3 .agents/scripts/workflow_check.py review-plan --ticket <TID> --write-diff`. It measures
+   the diff, writes it to `.agents/.cache/review/diff.patch` (the reviewers have no shell) and prints
+   which of `reviewer`, `test-auditor` and `security-reviewer` to launch, and why. Launch exactly
+   those. `test-auditor` can run code: save `python3 .agents/scripts/workflow_check.py fingerprint`
+   before launching it and compare afterwards; a different hash means it changed the tree, so
+   discard its report and inspect the change. When it prints `launch: none`, do a written self-review of the diff against the
    ticket and the rules instead of spending a subagent; a sensitive surface always gets the
    `security-reviewer`. The one who implements is not the one who approves: fix the blocking
    findings, or justify in writing why not.

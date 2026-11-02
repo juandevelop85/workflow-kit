@@ -13,6 +13,11 @@ from helpers import KIT
 # Built from pieces so that this very file does not contain the forbidden word.
 FORBIDDEN = "ant" + "os"
 SKIP_DIRS = {".git", "__pycache__"}
+# Tools that can change files. A shell can too, so only the agents that need to run code keep one.
+WRITING_TOOLS = {"Edit", "Write", "NotebookEdit", "MultiEdit"}
+READ_ONLY_AGENTS = {"reviewer", "security-reviewer"}
+# Every tool a review agent may have; only Bash (to run tests) is allowed beyond reading.
+AGENT_TOOLS = {"Read", "Grep", "Glob", "Bash"}
 
 
 def text_files(root: pathlib.Path):
@@ -73,9 +78,12 @@ class CoreStructure(unittest.TestCase):
             fm = frontmatter(agent)
             self.assertEqual(fm.get("name"), agent.stem)
             self.assertTrue(fm.get("description"), agent.name)
-            self.assertIn("Read", fm.get("tools", ""), agent.name)
-            self.assertNotIn("Edit", fm.get("tools", ""), f"{agent.name} must be read-only")
-            self.assertNotIn("Write", fm.get("tools", ""), f"{agent.name} must be read-only")
+            tools = {t.strip() for t in fm.get("tools", "").split(",")}
+            self.assertIn("Read", tools, agent.name)
+            self.assertFalse(tools & WRITING_TOOLS, f"{agent.name} has a tool that changes files")
+            self.assertLessEqual(tools, AGENT_TOOLS, f"{agent.name} has a tool outside {sorted(AGENT_TOOLS)}")
+            if agent.stem in READ_ONLY_AGENTS:
+                self.assertNotIn("Bash", tools, f"{agent.name} must be read-only")
         for command in sorted((KIT / "core/commands").glob("*.md")):
             self.assertTrue(frontmatter(command).get("description"), command.name)
 
@@ -95,11 +103,16 @@ class CoreStructure(unittest.TestCase):
             folder, name = ref
             self.assertTrue((KIT / "core" / folder / name).exists(), f".agents/{folder}/{name} does not exist")
 
-    def test_the_reviewers_say_they_are_read_only(self):
-        # the tool list is checked above; the prose must say it too, so a reader (or a
+    def test_the_prose_of_each_reviewer_matches_its_tools(self):
+        # the tool list is checked above; the prose must say the same, so a reader (or a
         # future edit of the tool list) is not surprised
         for agent in (KIT / "core/agents").glob("*.md"):
-            self.assertIn("Read-only", agent.read_text(encoding="utf-8"), agent.name)
+            text = agent.read_text(encoding="utf-8")
+            if "Bash" not in {t.strip() for t in frontmatter(agent).get("tools", "").split(",")}:
+                self.assertIn("Read-only", text, agent.name)
+            else:
+                self.assertNotIn("Read-only", text, f"{agent.name} has a shell: it is not read-only")
+                self.assertIn("disposable worktree", text, agent.name)
 
 
 if __name__ == "__main__":

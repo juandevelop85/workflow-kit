@@ -95,7 +95,11 @@ def run_classify(root: pathlib.Path, base: str | None, as_json: bool) -> int:
         for e in errors:
             print(f"ERROR: {e}", file=sys.stderr)
         return 1
-    result = classify(cfg, diff_size(root, base))
+    try:
+        result = classify(cfg, diff_size(root, base))
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
     if as_json:
         print(json.dumps({**result, "questions": list(QUESTIONS)}, indent=2))
         return 0

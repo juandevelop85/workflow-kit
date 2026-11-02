@@ -14,7 +14,9 @@ configuration. Arguments of the generator typed by a person who copied them from
 
 - `install.py update/status` read the target's manifest: every path is validated (`safe_dest`).
 - `workflow_init.py` writes files from CLI arguments: every value is escaped or validated.
-- `workflow_check.py` runs git with `core.fsmonitor` off; `gates --run` executes the commands of the
+- `workflow_check.py` runs git with `core.fsmonitor` off and diffs with `--no-ext-diff --no-textconv`;
+  writes into `.agents/.cache/` refuse symlinks. **Not yet covered:** a repository-local
+  `filter.<x>.clean` still runs during `git diff` (T1.7). `gates --run` executes the commands of the
   project's own `workflow.toml` through the shell, like a Makefile: it is run only on trusted repos.
 
 ## Surfaces that always need a security review

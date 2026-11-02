@@ -17,6 +17,8 @@ context    print a compact brief of one ticket (status, dependencies and their
            have to read the whole backlog.
 classify   the minimum lane of the current change (quick, standard, deep), why, and the
            questions that may raise it: how much process this change needs.
+fingerprint  a hash of HEAD, the working tree and the untracked files: compare it before and
+           after an agent that can run code, to know it changed nothing.
 review-plan  measure the diff and say which independent reviewers are worth
            launching (a tiny or docs-only change gets a self-review checklist).
 gates --run  run the gates, keep the full output in a log file and print one
@@ -35,10 +37,10 @@ import sys
 from .checks import run_check
 from .gates import run_gates, run_gates_report
 from .lanes import run_classify
-from .review import run_review_plan, run_sensitive
+from .review import run_fingerprint, run_review_plan, run_sensitive
 from .tickets import run_context
 
-SUBCOMMANDS = ("check", "gates", "sensitive", "context", "classify", "review-plan")
+SUBCOMMANDS = ("check", "gates", "sensitive", "context", "classify", "review-plan", "fingerprint")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -65,6 +67,8 @@ def main(argv: list[str] | None = None) -> int:
         if name == "review-plan":
             p.add_argument("--base", default=None, help="also count changes since this ref")
             p.add_argument("--ticket", default=None, help="ticket id, to count its acceptance criteria")
+            p.add_argument("--write-diff", action="store_true",
+                           help=f"write the whole diff to {'.agents/.cache/review/diff.patch'} for the reviewers")
             p.add_argument("--json", action="store_true")
         if name == "sensitive":
             p.add_argument("--base", default=None, help="also include files changed since this ref")
@@ -73,10 +77,12 @@ def main(argv: list[str] | None = None) -> int:
     root = pathlib.Path(args.root)
     if args.cmd == "context":
         return run_context(root, args.ticket)
+    if args.cmd == "fingerprint":
+        return run_fingerprint(root)
     if args.cmd == "classify":
         return run_classify(root, args.base, args.json)
     if args.cmd == "review-plan":
-        return run_review_plan(root, args.base, args.ticket, args.json)
+        return run_review_plan(root, args.base, args.ticket, args.json, args.write_diff)
     if args.cmd == "gates":
         if args.run:
             return run_gates_report(root, args.tail)

@@ -4,7 +4,9 @@ argument-hint: [ticket id | branch | empty for the current diff]
 ---
 
 Review $ARGUMENTS (if empty, the current diff against the base branch) with independent reviewers,
-launched in parallel as subagents:
+launched in parallel as subagents. First run `python3 .agents/scripts/workflow_check.py review-plan
+--write-diff` (add `--base <ref>` for a branch): the reviewers have no shell and read the diff from
+`.agents/.cache/review/diff.patch`.
 
 1. `reviewer`: correctness, scope, project rules.
 2. `test-auditor`: criterion → test traceability and quality of the tests.

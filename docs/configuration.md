@@ -51,7 +51,8 @@ python3 .agents/scripts/workflow_check.py gates [--json]          # name<TAB>com
 python3 .agents/scripts/workflow_check.py sensitive [--base REF] [paths…]
 python3 .agents/scripts/workflow_check.py context TID             # compact brief of one ticket
 python3 .agents/scripts/workflow_check.py classify [--base REF] [--json]  # minimum lane of the change
-python3 .agents/scripts/workflow_check.py review-plan [--ticket TID] [--base REF] [--json]
+python3 .agents/scripts/workflow_check.py review-plan [--ticket TID] [--base REF] [--json] [--write-diff]
+python3 .agents/scripts/workflow_check.py fingerprint                # content hash of HEAD + working tree + untracked
 python3 .agents/scripts/workflow_check.py gates --run [--tail N]  # PASS/FAIL per gate, full output in a log
 ```
 

@@ -27,6 +27,12 @@ lane of a change (quick, standard, deep) from its size, spread, sensitive paths 
 plus the questions that may raise it; the `change` skill and `/change` run only that lane's process;
 `quick` commits need no ticket and are audited by `check --commits`. Tunable in `[lanes]`.
 
+Review agents: `reviewer` and `security-reviewer` have no shell (read-only is enforced by their
+tools, not requested in their prompt) and read the diff written by `review-plan --write-diff`;
+`test-auditor` keeps a shell for mutation testing, works in a disposable worktree and is checked
+with `workflow_check.py fingerprint` (a content hash) before and after. Cache writes refuse
+symlinks, and diffs never run a repository's external diff or textconv driver.
+
 Hardened before the first release against an untrusted target repository (path traversal through a
 doctored manifest or through symlinks, execution of a script found in the target, configuration
 injection through generator arguments); each attack is a regression test in `tests/test_security.py`.
