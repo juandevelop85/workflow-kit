@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Workflow checker: turns the rules a project wrote down into checks.
 
-The code lives in the `workflow_kit` package next to this file; the subcommands are listed in
-`workflow_kit/cli.py`.
+The code lives in the `workflow_kit` package next to this file; `--help` lists the subcommands.
 Standard library only (Python 3.11+, for `tomllib`).
 """
 import pathlib

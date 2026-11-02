@@ -7,7 +7,9 @@ raise false positives on correct repositories.
 import pathlib
 import unittest
 
-from helpers import STACKS, TempDirMixin, checker, commit, fixture_repo, init_git
+import sys
+
+from helpers import KIT, STACKS, TempDirMixin, checker, commit, fixture_repo, init_git, run
 
 
 def write(path: pathlib.Path, text: str):
@@ -212,6 +214,18 @@ class CheckerConfiguration(TempDirMixin, unittest.TestCase):
         result = checker(self.repo, "sensitive")
         self.assertEqual(result.stdout.split(), ["app/auth/login.py"])
 
+
+
+class CommandLine(TempDirMixin, unittest.TestCase):
+    def test_a_mistyped_subcommand_is_named_and_corrected(self):
+        result = checker(fixture_repo("python", self.tmp), "chek")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("unknown subcommand «chek»; did you mean «check»?", result.stderr)
+
+    def test_help_lists_every_subcommand(self):
+        out = run([sys.executable, str(KIT / "core/scripts/workflow_check.py"), "--help"]).stdout
+        for name in ("check", "classify", "review-plan", "fingerprint"):
+            self.assertIn(name, out)
 
 if __name__ == "__main__":
     unittest.main()

@@ -31,6 +31,7 @@ not a rule.
 from __future__ import annotations
 
 import argparse
+import difflib
 import pathlib
 import sys
 
@@ -45,7 +46,12 @@ SUBCOMMANDS = ("check", "gates", "sensitive", "context", "classify", "review-pla
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    if not argv or argv[0].startswith("-") or argv[0] not in SUBCOMMANDS:
+    if argv and not argv[0].startswith("-") and argv[0] not in SUBCOMMANDS:
+        close = difflib.get_close_matches(argv[0], SUBCOMMANDS, n=1)
+        hint = f"; did you mean «{close[0]}»?" if close else ""
+        print(f"ERROR: unknown subcommand «{argv[0]}»{hint} (one of: {', '.join(SUBCOMMANDS)})", file=sys.stderr)
+        return 2
+    if argv[:1] not in (["-h"], ["--help"]) and (not argv or argv[0].startswith("-")):
         argv.insert(0, "check")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
