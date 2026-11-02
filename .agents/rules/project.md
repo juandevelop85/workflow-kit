@@ -11,8 +11,10 @@ These rules are read by every agent before it works on the kit itself.
   `.agents/`: edit them in `core/`.
 - Python 3.11+, standard library only, for the scripts and the tests. The tests use `unittest` and
   run the scripts as a user would (subprocess over throwaway repositories built from the fixtures).
-- Every security property of the installer or the generator has a regression test in
-  `tests/test_security.py`.
+- Every security property has a regression test: the installer, the generator and the checker's git
+  hardening in `tests/test_security.py`, the review hand-off and the cache in
+  `tests/test_read_only.py`, the quick-lane audit in `tests/test_lanes.py`, the review agents' tool
+  lists in `tests/test_kit_hygiene.py`.
 
 ## Language policy
 

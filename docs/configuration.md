@@ -56,11 +56,23 @@ python3 .agents/scripts/workflow_check.py fingerprint                # content h
 python3 .agents/scripts/workflow_check.py gates --run [--tail N]  # PASS/FAIL per gate, full output in a log
 ```
 
-The last three exist to save tokens (see `[efficiency]`): `context` replaces reading the whole backlog
-and ticket, `review-plan` decides which review subagents are worth their cost for this diff, and
-`gates --run` keeps passing output out of the conversation. Gate logs go to `.agents/.cache/gates/`,
-which ignores itself in git. `gates --run` executes the commands of `workflow.toml` through the shell,
-exactly like running them by hand: use it only on repositories you trust.
+Every subcommand takes `--root DIR` (default: the repository that contains the script); `--help`
+lists them all.
+
+- **Saving tokens** (see `[efficiency]`): `context` replaces reading the whole backlog and ticket,
+  `review-plan` decides which review subagents are worth their cost for this diff, and `gates --run`
+  keeps passing output out of the conversation.
+- **Proportional ceremony** (see `[lanes]`): `classify` prints the minimum lane of the current change.
+- **Review hand-off:** `review-plan --write-diff` writes `.agents/.cache/review/diff.patch` (what to
+  review, with a header naming HEAD and the base) and `working.patch` (the part that applies on
+  HEAD, for the test auditor's worktree); `fingerprint` hashes HEAD, the index, the working tree and
+  the untracked files, so a change made there by an agent that can run code is visible (ignored files
+and the inside of `.git` are not hashed).
+
+Everything the checker writes goes under `.agents/.cache/`, which ignores itself in git; it refuses
+to write through a symlink. Diffs never run the repository's external diff or textconv driver.
+`gates --run` executes the commands of `workflow.toml` through the shell, exactly like running them
+by hand: use it only on repositories you trust.
 
 ## Presets
 

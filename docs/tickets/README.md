@@ -20,3 +20,4 @@ its own file in this directory; this table indexes them.
 | 1 | [T1.5](T1.5-proportional-ceremony.md) | Proportional ceremony: change lanes (ODD) | ✅ Done |
 | 1 | [T1.6](T1.6-read-only-reviewers.md) | Review agents that really are read-only | ✅ Done |
 | 1 | [T1.7](T1.7-neutral-git-config.md) | Run git with a neutral configuration | ⏳ Pending |
+| 1 | [T1.8](T1.8-docs-refresh.md) | Documentation matches the code after phase 1 | ✅ Done |

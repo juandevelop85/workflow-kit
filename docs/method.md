@@ -16,7 +16,8 @@ In practice:
 
 - Any new agent session starts with the same context and the same rules.
 - "Done" is defined by a verifiable acceptance criterion, not by anyone's impression.
-- Every change is traceable to a ticket and a commit.
+- Every change is traceable: to a ticket and a commit, or, for a quick change, to its commit and
+  the request it answered.
 
 ## 2. The four layers
 
@@ -24,11 +25,13 @@ In practice:
 | :--- | :--- | :--- |
 | **1. Memory and rules** | `CLAUDE.md`, `AGENTS.md`, `.agents/rules/` | Permanent context: layout, conventions, limits, the decisions already taken. |
 | **2. Specification** | the tickets directory and its backlog | Each unit of work has a goal, a technical scope and acceptance criteria. The backlog is the board. |
-| **3. Procedure** | skills in `.agents/skills/` | A repeatable runbook to author and to run a ticket end to end. |
+| **3. Procedure** | skills in `.agents/skills/` | A repeatable runbook to classify a change, and to author and run a ticket end to end. |
 | **4. Quality gates** | commands declared in `.agents/workflow.toml`, plus the checker | Objective verification, independent of the agent's opinion. |
 
 A fifth element runs through all of them: **independent review**. The agent that writes the code does
-not approve it. Reviewer agents work read-only with clean context.
+not approve it. Reviewer agents work with clean context; `reviewer` and `security-reviewer` are
+read-only by their tool list (no shell), and `test-auditor`, which must run tests, works in a
+disposable worktree and is checked with a content fingerprint before and after.
 
 ### The kit: core and project layer
 
@@ -83,6 +86,9 @@ does not rewrite a project decision.
 4. **Review.** The person reviews. If something drifted, fix the **ticket or the rule**, not only the
    code.
 5. **Learning.** What was learned is written into the rules so it does not repeat with any agent.
+
+A quick change (section 5) skips the Ticket step, `ticket-runner` and the reviewer subagents; the
+gates and the checker always run.
 
 ## 5. Proportional ceremony: lanes
 
@@ -150,9 +156,9 @@ runs the lane; `ticket-runner` remains the procedure for standard and deep work.
 | `ticket-runner` (skill) | Runs a ticket end to end. |
 | `quality-gate` (skill) | Runs the declared gates and reports what this change breaks and what was already broken. |
 | `reviewer` (agent) | Reviews the diff against the ticket and the rules. Read-only. |
-| `test-auditor` (agent) | Checks that each criterion has a test that would fail if the code were wrong. |
-| `security-reviewer` (agent) | Reviews sensitive surfaces with an attacker's mindset, against the project's threat model. |
-| `workflow_check.py` | Backlog coherence, honest closing, file sizes, commit format (and audit of `quick` commits); lists the gates; finds sensitive changes; `classify` prints the minimum lane. |
+| `test-auditor` (agent) | Checks that each criterion has a test that would fail if the code were wrong, mutating code in a disposable worktree. |
+| `security-reviewer` (agent) | Reviews sensitive surfaces with an attacker's mindset, against the project's threat model. Read-only. |
+| `workflow_check.py` | Backlog coherence, honest closing, file sizes, commit format (and audit of `quick` commits); lists the gates; finds sensitive changes; `classify` prints the minimum lane; `review-plan --write-diff` hands the diff to the reviewers; `fingerprint` hashes HEAD, the index, the working tree and the untracked files (not ignored files or `.git`) to show an agent changed none of them. |
 | Token economy | The skills read a compact `context` brief instead of the whole backlog; `review-plan` skips review subagents for tiny or docs-only diffs; `gates --run` logs gate output to a file and reports one line per gate; the review agents return one line per finding with a cap, and `test-auditor` runs on a cheaper model (`model:` in its frontmatter; change it there). |
 | Commands | `/change`, `/ticket-new`, `/ticket-run`, `/ticket-review`, `/quality-gate`, `/ticket-status`, `/workflow-init`. |
 
@@ -160,5 +166,5 @@ runs the lane; `ticket-runner` remains the procedure for standard and deep work.
 
 The method gives a base; further quality methods are separate decisions, each worth its own ticket,
 and none is part of this kit yet: dependency and licence audits, secret scanning in CI, fuzzing of
-parsers, mutation testing, property-based testing, coverage thresholds, and evaluations of whether a
+parsers, automated mutation testing (`test-auditor` only mutates by hand), property-based testing, coverage thresholds, and evaluations of whether a
 new agent follows the rules. Add one when a real failure shows you need it, not before.

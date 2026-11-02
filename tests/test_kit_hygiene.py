@@ -6,6 +6,7 @@
 import pathlib
 import py_compile
 import re
+import sys
 import unittest
 
 from helpers import KIT
@@ -91,11 +92,22 @@ class CoreStructure(unittest.TestCase):
         skills = {p.name for p in (KIT / "core/skills").iterdir()}
         agents = {p.stem for p in (KIT / "core/agents").glob("*.md")}
         commands = {p.stem for p in (KIT / "core/commands").glob("*.md")}
-        corpus = "\n".join(p.read_text(encoding="utf-8") for p in text_files(KIT / "core") if p.suffix == ".md")
-        for ref in set(re.findall(r"`(/[a-z-]+)", corpus)):
+        prose = [p for p in text_files(KIT / "core") if p.suffix in {".md", ".tmpl"}]
+        prose += list((KIT / "docs").glob("*.md")) + [KIT / "README.md", KIT / "CHANGELOG.md", KIT / "AGENTS.md"]
+        texts = {p: p.read_text(encoding="utf-8") for p in prose}
+        for ref in set(re.findall(r"`(/[a-z-]+)", "\n".join(texts.values()))):
             self.assertIn(ref.lstrip("/"), commands, f"command {ref} is referenced but does not exist")
         for name in skills | agents:
-            self.assertIn(name, corpus, f"{name} is never referenced")
+            # a whole word, outside the file that defines it
+            elsewhere = "\n".join(t for p, t in texts.items() if p.parent.name != name and p.stem != name)
+            self.assertRegex(elsewhere, rf"(?<![\w-]){re.escape(name)}(?![\w-])", f"{name} is never referenced")
+
+    def test_configuration_documents_every_subcommand(self):
+        sys.path.insert(0, str(KIT / "core/scripts"))
+        from workflow_kit.cli import SUBCOMMANDS
+        text = (KIT / "docs/configuration.md").read_text(encoding="utf-8")
+        documented = set(re.findall(r"workflow_check\.py \[?([a-z][a-z-]*)", text))
+        self.assertEqual(documented, set(SUBCOMMANDS))
 
     def test_prose_points_only_at_scripts_and_templates_that_exist(self):
         corpus = "\n".join(p.read_text(encoding="utf-8") for p in text_files(KIT / "core") if p.suffix in {".md", ".tmpl"})
