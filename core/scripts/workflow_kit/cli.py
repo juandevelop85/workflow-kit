@@ -15,6 +15,8 @@ sensitive  print the changed files that match the project's sensitive
 context    print a compact brief of one ticket (status, dependencies and their
            status, acceptance criteria, rules to read) so the agent does not
            have to read the whole backlog.
+classify   the minimum lane of the current change (quick, standard, deep), why, and the
+           questions that may raise it: how much process this change needs.
 review-plan  measure the diff and say which independent reviewers are worth
            launching (a tiny or docs-only change gets a self-review checklist).
 gates --run  run the gates, keep the full output in a log file and print one
@@ -32,18 +34,21 @@ import sys
 
 from .checks import run_check
 from .gates import run_gates, run_gates_report
+from .lanes import run_classify
 from .review import run_review_plan, run_sensitive
 from .tickets import run_context
+
+SUBCOMMANDS = ("check", "gates", "sensitive", "context", "classify", "review-plan")
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    if not argv or argv[0].startswith("-") or argv[0] not in {"check", "gates", "sensitive", "context", "review-plan"}:
+    if not argv or argv[0].startswith("-") or argv[0] not in SUBCOMMANDS:
         argv.insert(0, "check")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     default_root = str(pathlib.Path(__file__).resolve().parents[3])
-    for name in ("check", "gates", "sensitive", "context", "review-plan"):
+    for name in SUBCOMMANDS:
         p = sub.add_parser(name)
         p.add_argument("--root", default=default_root)
         if name == "check":
@@ -54,6 +59,9 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--tail", type=int, default=None, help="lines of a failing gate to show (with --run)")
         if name == "context":
             p.add_argument("ticket", help="ticket id, e.g. T1.1")
+        if name == "classify":
+            p.add_argument("--base", default=None, help="also count changes since this ref")
+            p.add_argument("--json", action="store_true")
         if name == "review-plan":
             p.add_argument("--base", default=None, help="also count changes since this ref")
             p.add_argument("--ticket", default=None, help="ticket id, to count its acceptance criteria")
@@ -65,6 +73,8 @@ def main(argv: list[str] | None = None) -> int:
     root = pathlib.Path(args.root)
     if args.cmd == "context":
         return run_context(root, args.ticket)
+    if args.cmd == "classify":
+        return run_classify(root, args.base, args.json)
     if args.cmd == "review-plan":
         return run_review_plan(root, args.base, args.ticket, args.json)
     if args.cmd == "gates":

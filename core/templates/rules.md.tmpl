@@ -13,7 +13,9 @@ Describe the layout of the repository and the conventions of the code. *(Fill th
 
 ## Ticket flow
 
-- Every change corresponds to a ticket in `{{tickets_dir}}/`.
+- Every change starts with `/change`: `workflow_check.py classify` prints its minimum lane. A quick
+  change needs no ticket and is committed as `<type>(<area>): quick - <title>`; anything else
+  corresponds to a ticket in `{{tickets_dir}}/`. Never use a lighter lane than the one printed.
 - Do not change a ticket's functional goals without updating the ticket.
 - Closing a ticket: verify every acceptance criterion, mark it done in the backlog, then commit
   with the format `<type>(<area>): <TID> - <title>`.

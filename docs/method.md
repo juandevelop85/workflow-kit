@@ -84,7 +84,43 @@ does not rewrite a project decision.
    code.
 5. **Learning.** What was learned is written into the rules so it does not repeat with any agent.
 
-## 5. Principles
+## 5. Proportional ceremony: lanes
+
+The flow above is the same for every change; **how much of it runs depends on the work**. This is the
+core idea of Organic Driven Development (ODD): process that does not reduce a real risk is waste, and
+a method that charges a typo the price of a feature teaches people to skip it.
+
+| Lane | When | What it takes |
+| :--- | :--- | :--- |
+| **quick** | Small, localised, well understood, no sensitive surface | No ticket. Read, change, gates, checker, self-review of the diff, a `quick` commit. |
+| **standard** | A real behaviour change, or anything sensitive | A ticket (it may be short), tests first, gates, `review-plan`, one commit. |
+| **deep** | Large, wide or risky work | A ticket split into steps, an explicit risk section, plan confirmed with the person, full review. |
+
+Who decides, and how it stays honest:
+
+1. **The checker measures** what can be measured and prints a *minimum* lane (`workflow_check.py
+   classify`): size and spread of the diff, sensitive paths, code changed without a test change,
+   binary files, and changes to the workflow itself (`.agents/`, agent memory). A sensitive path is
+   never quick, however small: one line of session settings can be a security change. Moves count
+   at both ends, so moving a file into a sensitive path is caught.
+2. **The agent judges** what cannot be measured, with four questions: is it well understood? free of
+   hidden risk? finishable and reviewable on its own? resumable from the request and the diff? Any
+   "no" raises the lane. The agent may raise a lane, never lower it.
+3. **The history is audited.** A `quick` commit (`<type>(<area>): quick - <title>`) is checked
+   afterwards by `check --commits`: one that exceeded the quick limits, touched a sensitive path, a
+   binary or the workflow's own files, or cites a ticket outside the backlog is an error. Written instructions are not enforcement; this check is.
+
+What the audit does **not** catch, by design or not yet: one change split into several quick
+commits (each is judged alone); touching any test file switches off the untested-code signal; a
+merge commit's own changes are not audited; each commit is judged by the configuration at `HEAD`
+(which is why changing that configuration is never quick). These are limits of measurement: the
+review of standard work and the person's review of the history cover them.
+
+The gates and the checker run in every lane. What changes is the paperwork and the reviewers, never
+the verification. The `change` skill (`/change`) is the single entry point that classifies and then
+runs the lane; `ticket-runner` remains the procedure for standard and deep work.
+
+## 6. Principles
 
 1. **The repository is the memory.** The agent does not remember between sessions; the repository
    does.
@@ -96,28 +132,31 @@ does not rewrite a project decision.
    simulation, the data says so.
 6. **Rules correct themselves.** Each repeated mistake becomes a written rule, with the ticket or
    commit that taught it.
-7. **Small, traceable changes.** One ticket, one commit; moving code never mixes with changing
-   behaviour.
+7. **Small, traceable changes.** One ticket, one commit; a quick change, one `quick` commit; moving
+   code never mixes with changing behaviour.
 8. **One framework, several agents.** `.agents/` is the single source; each tool links to it.
 9. **Honest scope.** If a ticket must grow, document it; if it is partial, say so.
 10. **A rule that can be silenced unnoticed is not a rule.** Anything the project switches off is
     reported on every run.
+11. **Ceremony in proportion to risk.** The flow is the same for every change; how much of it runs
+    is measured, judged and audited (section 5). Process that reduces no risk is waste.
 
-## 6. The pieces
+## 7. The pieces
 
 | Piece | Role |
 | :--- | :--- |
+| `change` (skill) | Single entry point: classifies a change and runs only the process its lane needs. |
 | `ticket-author` (skill) | Writes a ticket with criteria that name their test and registers it. |
 | `ticket-runner` (skill) | Runs a ticket end to end. |
 | `quality-gate` (skill) | Runs the declared gates and reports what this change breaks and what was already broken. |
 | `reviewer` (agent) | Reviews the diff against the ticket and the rules. Read-only. |
 | `test-auditor` (agent) | Checks that each criterion has a test that would fail if the code were wrong. |
 | `security-reviewer` (agent) | Reviews sensitive surfaces with an attacker's mindset, against the project's threat model. |
-| `workflow_check.py` | Backlog coherence, honest closing, file sizes, commit format; lists the gates; finds sensitive changes. |
+| `workflow_check.py` | Backlog coherence, honest closing, file sizes, commit format (and audit of `quick` commits); lists the gates; finds sensitive changes; `classify` prints the minimum lane. |
 | Token economy | The skills read a compact `context` brief instead of the whole backlog; `review-plan` skips review subagents for tiny or docs-only diffs; `gates --run` logs gate output to a file and reports one line per gate; the review agents return one line per finding with a cap, and `test-auditor` runs on a cheaper model (`model:` in its frontmatter; change it there). |
-| Commands | `/ticket-new`, `/ticket-run`, `/ticket-review`, `/quality-gate`, `/ticket-status`, `/workflow-init`. |
+| Commands | `/change`, `/ticket-new`, `/ticket-run`, `/ticket-review`, `/quality-gate`, `/ticket-status`, `/workflow-init`. |
 
-## 7. What to add next
+## 8. What to add next
 
 The method gives a base; further quality methods are separate decisions, each worth its own ticket,
 and none is part of this kit yet: dependency and licence audits, secret scanning in CI, fuzzing of

@@ -21,7 +21,10 @@ the user's language.
 
 ## Change flow
 
-- Every change corresponds to a ticket in `docs/tickets/`.
+- Every change starts with the `change` skill: `workflow_check.py classify` prints its minimum lane.
+  Quick changes need no ticket (`<type>(<area>): quick - <title>`); anything else is a ticket in
+  `docs/tickets/`. Never use a lighter lane than the one printed. `core/skills`, `core/commands` and
+  `core/templates` are process files here (`[lanes].process_globs`): changing them is never quick.
 - One ticket, one commit, with the format `<type>(<area>): <TID> - <title>`.
 - Moving code never mixes with changing behaviour.
 - The kit must pass its own checker: `python3 .agents/scripts/workflow_check.py --commits 20`

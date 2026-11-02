@@ -21,11 +21,31 @@ def changed_files(root: pathlib.Path, base: str | None) -> list[str]:
     return sorted(files)
 
 
+# A binary file has no line count; it is recorded with this value so that callers can tell.
+BINARY = -1
+
+
 def numstat(root: pathlib.Path, *args: str) -> dict[str, int]:
-    res = subprocess.run([*GIT, "diff", "--numstat", *args], cwd=root, capture_output=True, text=True)
+    # `--no-renames`: a move is its old path removed and its new path added, so a path glob (a
+    # sensitive surface) matches both ends instead of a folded `{old => new}` name.
+    res = subprocess.run([*GIT, "diff", "--numstat", "--no-renames", *args], cwd=root, capture_output=True, text=True)
+    return parse_numstat(res)
+
+
+def commit_size(root: pathlib.Path, sha: str) -> dict[str, int] | None:
+    """{path: changed lines} of one commit (the root commit included); None if git fails."""
+    res = subprocess.run([*GIT, "show", "--numstat", "--no-renames", "--format=", sha],
+                         cwd=root, capture_output=True, text=True)
+    return parse_numstat(res) if res.returncode == 0 else None
+
+
+def parse_numstat(res: subprocess.CompletedProcess) -> dict[str, int]:
     out: dict[str, int] = {}
     for line in res.stdout.splitlines() if res.returncode == 0 else []:
         added, removed, name = (line.split("\t", 2) + ["", ""])[:3]
+        if added == removed == "-":
+            out[name] = BINARY
+            continue
         out[name] = out.get(name, 0) + sum(int(n) for n in (added, removed) if n.isdigit())
     return out
 
@@ -40,5 +60,7 @@ def diff_size(root: pathlib.Path, base: str | None) -> dict[str, int]:
     for name in untracked:
         path = root / name
         if path.is_file() and not path.is_symlink():
-            sizes[name] = sum(1 for _ in path.open(encoding="utf-8", errors="replace"))
+            with path.open("rb") as fh:
+                binary = b"\0" in fh.read(8192)
+            sizes[name] = BINARY if binary else sum(1 for _ in path.open(encoding="utf-8", errors="replace"))
     return sizes

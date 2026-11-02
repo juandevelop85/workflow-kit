@@ -22,6 +22,11 @@ ignore the emoji variation selector; duplicate ids, links to the wrong file and 
 ticket outside the backlog are errors; `[commits].since` exempts pre-adoption history explicitly. **Breaking:** the criteria heading must
 be exactly `## Acceptance Criteria` (a `###` heading or extra words no longer count).
 
+Proportional ceremony (Organic Driven Development): `workflow_check.py classify` prints the minimum
+lane of a change (quick, standard, deep) from its size, spread, sensitive paths and untested code,
+plus the questions that may raise it; the `change` skill and `/change` run only that lane's process;
+`quick` commits need no ticket and are audited by `check --commits`. Tunable in `[lanes]`.
+
 Hardened before the first release against an untrusted target repository (path traversal through a
 doctored manifest or through symlinks, execution of a script found in the target, configuration
 injection through generator arguments); each attack is a regression test in `tests/test_security.py`.

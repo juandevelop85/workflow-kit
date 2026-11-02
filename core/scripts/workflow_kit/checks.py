@@ -6,10 +6,11 @@ import pathlib
 import re
 import subprocess
 
-from .config import ConfigError, check_enabled, commit_pattern, load_config, tickets_cfg, validate_config
+from .config import ConfigError, check_enabled, commit_pattern, lanes, load_config, tickets_cfg, validate_config
 from .gates import load_preset, resolve_gates
-from .gitutil import GIT
+from .gitutil import GIT, commit_size
 from .globs import iter_files
+from .lanes import classify
 from .tickets import backlog_rows, count_criteria, parse_backlog, status_of
 
 
@@ -131,9 +132,20 @@ def check_commits(root, cfg, count, errors, warnings):
         fatal = [line for line in res.stderr.splitlines() if line.startswith("fatal:")]
         errors.append("git log failed: " + (fatal or res.stderr.strip().splitlines() or ["no output"])[0])
         return
+    quick = lanes(cfg)["quick_pattern"]
+    quick_re = re.compile(quick) if quick else None
     for line in res.stdout.splitlines():
         sha, _, subject = line.partition(" ")
-        if not pattern.match(subject):
+        if quick_re and quick_re.match(subject):
+            # Instructions are not enforcement: a commit that claims the quick lane must have been quick.
+            size = commit_size(root, sha)
+            verdict = classify(cfg, size) if size is not None else None
+            if verdict is None:
+                errors.append(f"commit {sha}: could not measure its diff to audit the quick lane")
+            elif verdict["lane"] != "quick":
+                errors.append(f"commit {sha}: «{subject}» is marked quick but needs the {verdict['lane']} "
+                              f"lane: {'; '.join(verdict['reasons'])}")
+        elif not pattern.match(subject):
             errors.append(f"commit {sha}: «{subject}» does not follow {hint}")
             continue
         # Ids are read after the `(area): ` prefix, so an area like `api2` is never taken for one.

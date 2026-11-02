@@ -46,6 +46,12 @@ command = "python3 -m compileall -q install.py core/scripts tests"
 # Code that writes into, or executes inside, a repository the kit does not control.
 globs = ["install.py", "core/scripts/workflow_init.py", "core/presets/**", "core/agents/**"]
 
+[lanes]
+# Here the workflow's skills, commands and templates live in core/ (.agents/ only links to them), so
+# git records their changes under core/: they are process files too, never quick.
+process_globs = [".agents/**", ".claude/**", "CLAUDE.md", "AGENTS.md",
+                 "core/skills/**", "core/commands/**", "core/templates/**"]
+
 [checks]
 backlog = true
 honest_closing = true

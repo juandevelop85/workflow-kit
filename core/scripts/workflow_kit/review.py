@@ -28,7 +28,7 @@ def run_sensitive(root: pathlib.Path, base: str | None, files: list[str]) -> int
 
 def plan_review(root: pathlib.Path, cfg: dict, base: str | None, tid: str | None, files: dict[str, int]) -> dict:
     eff = efficiency(cfg)
-    total = sum(files.values())
+    total = sum(max(n, 0) for n in files.values())
     docs = [glob_to_regex(g) for g in eff["doc_globs"]]
     docs_only = bool(files) and all(any(r.match(f) for r in docs) for f in files)
     sens = [glob_to_regex(g) for g in cfg.get("sensitive", {}).get("globs", [])]

@@ -6,6 +6,9 @@ description: >-
   (e.g. 'run ticket T1.1', 'implement T1.2').
 ---
 
+This is the procedure of the **standard** and **deep** lanes. A change without a ticket starts with
+the `change` skill, which classifies it first; a quick change never needs this protocol.
+
 # Ticket runner
 
 Project-specific facts (ticket directory and format, quality gates, size limits, commit format,

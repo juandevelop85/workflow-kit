@@ -14,9 +14,9 @@ rules into checks. It is stack-agnostic and product-agnostic.
 
 ```text
 core/                 the installable, versioned core
-  skills/             ticket-author, ticket-runner, quality-gate
+  skills/             change, ticket-author, ticket-runner, quality-gate
   agents/             reviewer, test-auditor, security-reviewer
-  commands/           /ticket-new /ticket-run /ticket-review /quality-gate /ticket-status /workflow-init
+  commands/           /change /ticket-new /ticket-run /ticket-review /quality-gate /ticket-status /workflow-init
   scripts/            workflow_check.py (the checker, code in workflow_kit/), workflow_init.py (project-layer generator)
   presets/            rust, node, python
   templates/          ticket, backlog, rules, threat model, agent memory, config
@@ -78,9 +78,11 @@ Use other tools by overriding a gate there; see [`docs/configuration.md`](docs/c
 
 1. Fill in `.agents/rules/project.md`, `.agents/security-model.md` and `[sensitive].globs` in
    `.agents/workflow.toml`: only you know them. See [`docs/adoption.md`](docs/adoption.md).
-2. In Claude Code, work with tickets:
+2. In Claude Code, start any change with `/change`: it measures the change and runs only the
+   process it needs (a typo gets no ticket; a sensitive or large change gets the full flow):
 
 ```text
+/change <what>         classify, then quick lane or a ticket
 /ticket-new <idea>     write a ticket
 /ticket-run <ID>       implement it end to end (gates + independent review)
 /ticket-review <ID>    review it again on demand

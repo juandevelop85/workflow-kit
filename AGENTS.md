@@ -9,6 +9,6 @@ This repository is the workflow kit, and it uses its own workflow.
 
 ## Commands
 
-- `/ticket-new <idea>`, `/ticket-run <ID>`, `/ticket-review [ID]`, `/quality-gate`, `/ticket-status`.
+- `/change <what>` (classifies first), `/ticket-new <idea>`, `/ticket-run <ID>`, `/ticket-review [ID]`, `/quality-gate`, `/ticket-status`.
 - Gates: `python3 .agents/scripts/workflow_check.py gates --run`.
 - Rules: `python3 .agents/scripts/workflow_check.py --commits 20`.

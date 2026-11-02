@@ -33,6 +33,14 @@ warning, invalid regular expressions an error. Switching a check or a gate off i
 | `[efficiency].gate_tail_lines` | `15` | Lines of a failing gate shown by `gates --run`. |
 | `[efficiency].gate_timeout_seconds` | `1800` | A gate running longer is reported as failed. |
 | `[efficiency].doc_globs` | `**/*.md`, `**/*.txt`, `docs/**` | A diff made only of these is "docs-only". |
+| `[lanes].quick_max_lines` / `quick_max_files` | `40` / `5` | A change within both, with no sensitive path, can be quick. |
+| `[lanes].quick_docs_max_lines` | `300` | The line limit of a quick change made only of prose (`[lanes].doc_globs`). |
+| `[lanes].doc_globs` | `**/*.md`, `**/*.rst`, `**/*.adoc` | Prose for the lanes. Narrower than `[efficiency].doc_globs`: a `.txt` can be a dependency list. |
+| `[lanes].process_globs` | `.agents/**`, `.claude/**`, `CLAUDE.md`, `AGENTS.md` | The workflow itself: a change here is at least standard, so no quick commit can loosen the rules. |
+| `[lanes].untested_code_max_lines` | `5` | More lines of code than this, with no test file changed, make a change at least standard. |
+| `[lanes].deep_min_lines` / `deep_min_files` | `400` / `15` | From either, a code change is deep (docs alone never are). |
+| `[lanes].test_globs` | `tests/**`, `test/**`, `**/__tests__/**`, `**/test_*.py`, `**/*_test.*`, `**/*.test.*`, `**/*.spec.*` | What counts as a test file. |
+| `[lanes].quick_pattern` | `^[a-z]+\([a-z0-9_-]+\): quick - .+` | Subject of a quick commit; `check --commits` verifies each one was within the quick limits. `""` turns the quick lane off. |
 | `[checks].backlog` / `honest_closing` / `sizes` | `true` | Switch a check off (it is then reported on every run). |
 
 ## Subcommands
@@ -42,6 +50,7 @@ python3 .agents/scripts/workflow_check.py [check] [--commits N]   # exit 1 on an
 python3 .agents/scripts/workflow_check.py gates [--json]          # name<TAB>command per gate
 python3 .agents/scripts/workflow_check.py sensitive [--base REF] [paths…]
 python3 .agents/scripts/workflow_check.py context TID             # compact brief of one ticket
+python3 .agents/scripts/workflow_check.py classify [--base REF] [--json]  # minimum lane of the change
 python3 .agents/scripts/workflow_check.py review-plan [--ticket TID] [--base REF] [--json]
 python3 .agents/scripts/workflow_check.py gates --run [--tail N]  # PASS/FAIL per gate, full output in a log
 ```
