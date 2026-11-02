@@ -217,5 +217,17 @@ class UpdateKeepsTheProjectLayer(TempDirMixin, unittest.TestCase):
         self.assertIn("run `install` first", result.stderr)
 
 
+class InstalledChecker(TempDirMixin, unittest.TestCase):
+    def test_installed_checker_runs_from_the_package(self):
+        repo = fixture_repo("python", self.tmp)
+        self.assertTrue((repo / ".agents/scripts/workflow_kit/cli.py").is_file())
+        # no --root, run from elsewhere: the root is found from the script's own location
+        result = run([sys.executable, str(repo / ".agents/scripts/workflow_check.py")], cwd=self.tmp)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("0 error(s), 0 warning(s)", result.stdout)
+        isolated = run([sys.executable, "-I", str(repo / ".agents/scripts/workflow_check.py")], cwd=self.tmp)
+        self.assertEqual(isolated.returncode, 0, isolated.stdout + isolated.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

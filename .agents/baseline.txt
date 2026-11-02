@@ -1,0 +1,2 @@
+# Files that already exceeded the size limit when the project adopted the kit.
+# Format: <path> <maximum lines>. They may only shrink: delete the line when you split the file.

@@ -54,8 +54,10 @@ header status line must use the same symbol as the backlog row.
   proves it. Each criterion names its test (`test: name`) or the command/inspection.
 - **One ticket, one commit:** if the scope needs several independent commits, split it.
 - **Honest:** if something is a simulation today, the ticket says so.
-- **Sensitive surfaces:** if the change touches a path listed in `[sensitive].globs`, add
-  "Requires security review" to the Risks so the review step launches the security reviewer.
+- **Sensitive surfaces:** `review-plan` launches the security reviewer when the diff matches
+  `[sensitive].globs`, not because of what the ticket says. If the change touches a sensitive path
+  that is not in the globs yet, propose adding it; note "Requires security review" in the Risks
+  either way.
 - **Do not change the scope of an existing ticket** unless asked: create a new one and link it.
 
 ## 4. Register it

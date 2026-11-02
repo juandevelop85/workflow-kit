@@ -23,7 +23,15 @@ them**, a gate that can be silenced without anyone noticing is not a gate.
 
 ## 2. Run them
 
-Run every gate in the order given, and stop to read the first failure. Then run the workflow
+```bash
+python3 .agents/scripts/workflow_check.py gates --run
+```
+
+runs every gate in order and prints one `PASS`/`FAIL` line per gate; the **full output goes to a
+log file** (`.agents/.cache/gates/<name>.log`, git-ignored) and only the tail of a failing gate is
+shown. Read the log of a failure only when the tail is not enough; never paste a passing gate's
+output into the conversation. If a gate must be run by hand (for example one in a sub-project with
+its own CI job), redirect its output to a file and read only the tail. Then run the workflow
 rules:
 
 ```bash
@@ -42,7 +50,7 @@ that changed the number of tests.
 
 ## 4. Report
 
-A table `gate | result | evidence` (trimmed output, test counts). Distinguish:
+A table `gate | result | evidence` (the `--run` line, test counts; a few lines at most). Distinguish:
 
 - **Red because of this change:** fix it before continuing.
 - **Already red** (check against the base branch): do not hide it and do not "fix" it out of scope

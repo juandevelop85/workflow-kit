@@ -6,6 +6,9 @@ description: >-
   (e.g. 'run ticket T1.1', 'implement T1.2').
 ---
 
+This is the procedure of the **standard** and **deep** lanes. A change without a ticket starts with
+the `change` skill, which classifies it first; a quick change never needs this protocol.
+
 # Ticket runner
 
 Project-specific facts (ticket directory and format, quality gates, size limits, commit format,
@@ -14,12 +17,15 @@ first; do not assume them.**
 
 ## 1. Context before touching code
 
-1. Read `.agents/workflow.toml` and every file in `[project].rules`.
-2. Read the backlog (`[tickets].backlog`): the status of the ticket, and of its dependencies. If a
-   dependency is not done, say so before starting.
-3. Read the ticket. Identify its **description, technical scope and acceptance criteria**. If the
-   criteria are not verifiable, stop and ask the user to fix the ticket: without a verifiable
-   criterion there is no "done".
+1. Run `python3 .agents/scripts/workflow_check.py context <TID>`. It prints the status of the
+   ticket and of its dependencies (flagging any that is not done), the rules files to read, and the
+   description, scope and acceptance criteria. If a dependency is not done, say so before starting.
+   Read the full backlog or ticket file only if that brief is not enough.
+2. Read `.agents/workflow.toml` only if you need a setting the brief does not show, and every file
+   in `[project].rules`.
+3. Identify the ticket's **description, technical scope and acceptance criteria**. If the criteria
+   are not verifiable, stop and ask the user to fix the ticket: without a verifiable criterion there
+   is no "done".
 4. Read the code the ticket will touch. Do not describe or change code you have not read.
 
 ## 2. Plan and tests first
@@ -43,11 +49,16 @@ first; do not assume them.**
 1. **Criterion → test traceability.** Walk the acceptance criteria one by one and point at the test
    (or documented inspection) that covers each. A criterion without a test is declared, not met.
 2. **Gates.** Run the `quality-gate` skill. No gate may be red.
-3. **Independent review.** Before the commit, launch the `reviewer` subagent on the diff, and the
-   `test-auditor` if there are several criteria. If the diff touches a sensitive surface
-   (`python3 .agents/scripts/workflow_check.py sensitive`, which prints the matching changed
-   files), also launch `security-reviewer`. The one who implements is not the one who approves:
-   fix the blocking findings, or justify in writing why not.
+3. **Independent review.** Before the commit, run
+   `python3 .agents/scripts/workflow_check.py review-plan --ticket <TID> --write-diff`. It measures
+   the diff, writes it to `.agents/.cache/review/diff.patch` (the reviewers have no shell) and prints
+   which of `reviewer`, `test-auditor` and `security-reviewer` to launch, and why. Launch exactly
+   those. `test-auditor` can run code: save `python3 .agents/scripts/workflow_check.py fingerprint`
+   before launching it and compare afterwards; a different hash means it changed the tree, so
+   discard its report and inspect the change. When it prints `launch: none`, do a written self-review of the diff against the
+   ticket and the rules instead of spending a subagent; a sensitive surface always gets the
+   `security-reviewer`. The one who implements is not the one who approves: fix the blocking
+   findings, or justify in writing why not.
 
 ## 5. Update the backlog
 
